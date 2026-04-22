@@ -102,13 +102,13 @@ function Jobs() {
         </div>
 
         <div style={styles.navLinks}>
-          <Link to="/" style={styles.navLink}>
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navLink}>
             Home
           </Link>
-          <Link to="/jobs" style={styles.activeNavLink}>
+          <Link to="/jobs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.activeNavLink}>
             Jobs
           </Link>
-          <Link to="/candidate-login" style={styles.navLink}>
+          <Link to="/candidate-login" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.login}>
             Login
           </Link>
         </div>
@@ -248,6 +248,14 @@ const styles = {
     justifyContent: "center",
     fontWeight: "800",
     fontSize: "18px",
+  },
+  login: {
+    textDecoration: "none",
+    color: "#fff",
+    background: "#0f172a",
+    padding: "12px 16px",
+    borderRadius: "12px",
+    fontWeight: "700",
   },
   logoTitle: {
     margin: 0,

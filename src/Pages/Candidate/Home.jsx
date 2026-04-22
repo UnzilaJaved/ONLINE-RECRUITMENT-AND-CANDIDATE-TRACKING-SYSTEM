@@ -49,10 +49,10 @@ function Home() {
         </div>
 
         <div style={styles.navLinks}>
-          <Link to="/" style={styles.navLink}>Home</Link>
-          <Link to="/jobs" style={styles.navLink}>Jobs</Link>
-          <Link to="/candidate-login" style={styles.navLink}>Login</Link>
-          <Link to="/admin-login" style={styles.adminButton}>Admin</Link>
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navLink}>Home</Link>
+          <Link to="/jobs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navLink}>Jobs</Link>
+          <Link to="/candidate-login" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navLink}>Login</Link>
+          <Link to="/admin-login" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.adminButton}>Admin</Link>
         </div>
       </nav>
 
