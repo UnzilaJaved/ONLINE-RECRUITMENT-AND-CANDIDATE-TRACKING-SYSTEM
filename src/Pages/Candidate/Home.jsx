@@ -68,8 +68,8 @@ function Home() {
           </p>
 
           <div style={styles.heroButtons}>
-            <Link to="/jobs" style={styles.primaryButton}>Explore Jobs</Link>
-            <Link to="/candidate-login" style={styles.secondaryButton}>
+            <Link to="/jobs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.primaryButton}>Explore Jobs</Link>
+            <Link to="/candidate-login" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.secondaryButton}>
               Track Application
             </Link>
           </div>
@@ -125,10 +125,10 @@ function Home() {
               <p style={styles.jobMeta}>💼 {job.type}</p>
 
               <div style={styles.jobActions}>
-                <Link to={`/jobs/${job.id}`} style={styles.jobViewButton}>
+                <Link to={`/jobs/${job.id}`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.jobViewButton}>
                   View Details
                 </Link>
-                <Link to={`/apply/${job.id}`} style={styles.jobApplyButton}>
+                <Link to={`/apply/${job.id}`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.jobApplyButton}>
                   Apply Now
                 </Link>
               </div>
@@ -137,7 +137,7 @@ function Home() {
         </div>
 
         <div style={styles.centerButtonWrap}>
-          <Link to="/jobs" style={styles.primaryButton}>See All Jobs</Link>
+          <Link to="/jobs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.primaryButton}>See All Jobs</Link>
         </div>
       </section>
     </div>

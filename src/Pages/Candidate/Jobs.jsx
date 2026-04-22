@@ -200,10 +200,10 @@ function Jobs() {
             <p style={styles.jobDescription}>{job.description}</p>
 
             <div style={styles.cardButtons}>
-              <Link to={`/jobs/${job.id}`} style={styles.viewButton}>
+              <Link to={`/jobs/${job.id}`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.viewButton}>
                 View Details
               </Link>
-              <Link to={`/apply/${job.id}`} style={styles.applyButton}>
+              <Link to={`/apply/${job.id}`} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.applyButton}>
                 Apply Now
               </Link>
             </div>

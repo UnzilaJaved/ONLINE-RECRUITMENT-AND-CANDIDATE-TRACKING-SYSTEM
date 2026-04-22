@@ -90,6 +90,9 @@ function CandidateLogin() {
           <p style={styles.footerText}>
             Don't have an account? <Link to="/candidate-signup" style={styles.link}>Create one</Link>
           </p>
+          <p style={styles.footerText}>
+            Sign in as <Link to="/admin/dashboard" style={styles.link}>Admin</Link>
+          </p>
         </div>
       </div>
     </div>
@@ -160,14 +163,14 @@ const styles = {
     borderRadius: "12px",
   },
   container: {
-    minHeight: "calc(100vh - 93px)",
+    minHeight: "60%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "36px",
+    padding: "35px",
   },
   loginCard: {
-    width: "100%",
+    width: "70%",
     maxWidth: "520px",
     background: "#ffffff",
     borderRadius: "28px",
@@ -188,16 +191,16 @@ const styles = {
   },
   form: {
     display: "grid",
-    gap: "18px",
+    gap: "15px",
   },
   label: {
     fontSize: "14px",
     fontWeight: "700",
-    marginBottom: "8px",
+    marginBottom: "4px",
     color: "#334155",
   },
   input: {
-    width: "100%",
+    width: "93%",
     padding: "14px 16px",
     borderRadius: "14px",
     border: "1px solid #d1d5db",
@@ -205,6 +208,7 @@ const styles = {
     color: "#0f172a",
   },
   submitButton: {
+    width: "100%",
     background: "#2563eb",
     color: "#ffffff",
     border: "none",
