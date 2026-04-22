@@ -302,8 +302,9 @@ const styles = {
   page: {
     minHeight: "100vh",
     background: "#f4f7fb",
-    padding: "28px",
+    padding: "5px",
     fontFamily: "Arial, sans-serif",
+    width: "100%",
   },
   topBar: {
     display: "flex",
