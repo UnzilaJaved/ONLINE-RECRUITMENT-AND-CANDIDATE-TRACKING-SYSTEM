@@ -17,32 +17,36 @@ function AdminLayout() {
           <div style={styles.sidebarSection}>
             <p style={styles.sidebarLabel}>Main Menu</p>
 
-            <Link to="/" style={styles.navItem}>
+            <Link to="/admin/dashboard" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navItem}>
               Dashboard
             </Link>
 
-            <Link to="/admin/jobs" style={styles.navItem}>
+            <Link to="/admin/jobs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navItem}>
               Manage Jobs
             </Link>
 
-            <Link to="/admin/applications" style={styles.navItem}>
+            <Link to="/admin/applications" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navItem}>
               Applications
             </Link>
 
-            <Link to="/admin/shortlist" style={styles.navItem}>
+            <Link to="/admin/shortlist" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navItem}>
               Shortlisting
             </Link>
 
-            <Link to="/admin/interview" style={styles.navItem}>
+            <Link to="/admin/interview" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navItem}>
               Interviews
             </Link>
 
-            <Link to="/admin/feedback" style={styles.navItem}>
+            <Link to="/admin/feedback" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navItem}>
               Decisions
             </Link>
 
-            <Link to="/admin/reports" style={styles.navItem}>
+            <Link to="/admin/reports" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.navItem}>
               Reports
+            </Link>
+
+            <Link to="/admin-login" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} style={styles.Logout}>
+              Logout
             </Link>
           </div>
         </div>
@@ -163,6 +167,28 @@ const styles = {
     background: "rgba(255,255,255,0.03)",
     transition: "all 0.2s ease",
     wordBreak: "break-word",
+  },
+
+  navItem: {
+    textDecoration: "none",
+    color: "#cbd5e1",
+    padding: "14px 16px",
+    borderRadius: "16px",
+    fontWeight: "600",
+    display: "block",
+    background: "rgba(255,255,255,0.03)",
+    transition: "all 0.2s ease",
+    wordBreak: "break-word",
+  },
+
+  Logout: {
+    textDecoration: "none",
+    color: "#dc2626",
+    background: "#fee2e2",
+    fontWeight: "700",
+    marginTop: "122px",
+    padding: "15px 14px",
+    borderRadius: "12px",
   },
 };
 

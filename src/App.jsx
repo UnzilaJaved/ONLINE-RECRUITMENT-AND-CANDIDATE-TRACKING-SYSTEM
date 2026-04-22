@@ -12,6 +12,7 @@ import CandidateDashboard from "./Pages/Candidate/CandidateDashboard.jsx";
 import ApplicationStatus from "./Pages/Candidate/ApplicationStatus.jsx";
 
 import AdminDashboard from "./Pages/Admin/AdminDashboard";
+import AdminLogin from "./Pages/Admin/AdminLogin";
 import ManageJobs from "./Pages/Admin/ManageJobs";
 import Applications from "./Pages/Admin/Applications";
 import CandidateDetails from "./Pages/Admin/CandidateDetails";
@@ -36,6 +37,7 @@ function App() {
         <Route path="/application-status" element={<ApplicationStatus />} />
 
         {/* Admin Pages */}
+        <Route path="/admin-login" element={<AdminLogin />} />
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/jobs" element={<ManageJobs />} />

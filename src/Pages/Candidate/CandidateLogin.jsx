@@ -91,7 +91,7 @@ function CandidateLogin() {
             Don't have an account? <Link to="/candidate-signup" style={styles.link}>Create one</Link>
           </p>
           <p style={styles.footerText}>
-            Sign in as <Link to="/admin/dashboard" style={styles.link}>Admin</Link>
+            Sign in as <Link to="/admin-login" style={styles.link}>Admin</Link>
           </p>
         </div>
       </div>

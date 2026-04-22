@@ -90,14 +90,17 @@ function CandidateDashboard() {
         </div>
 
         <div style={styles.navLinks}>
-          <Link to="/" style={styles.navLink}>
+          <Link to="/candidate-dashboard" style={styles.navLink}>
             Home
           </Link>
-          <Link to="/jobs" style={styles.navLink}>
+          {/*<Link to="/jobs" style={styles.navLink}>
             Jobs
-          </Link>
+          </Link>*/}
           <Link to="/application-status" style={styles.activeNavLink}>
             Status
+          </Link>
+          <Link to="/candidate-login" style={styles.Logout}>
+            Logout
           </Link>
         </div>
       </nav>
@@ -113,12 +116,12 @@ function CandidateDashboard() {
             </p>
 
             <div style={styles.heroButtons}>
-              <Link to="/application-status" style={styles.primaryButton}>
+              {/*<Link to="/application-status" style={styles.primaryButton}>
                 View Full Status
               </Link>
               <Link to="/jobs" style={styles.secondaryButton}>
                 Explore More Jobs
-              </Link>
+              </Link>*/}
             </div>
           </div>
 
@@ -297,9 +300,9 @@ function CandidateDashboard() {
                 <Link to="/jobs" style={styles.actionButton}>
                   Browse Jobs
                 </Link>
-                <Link to="/" style={styles.actionButton}>
+                {/*<Link to="/" style={styles.actionButton}>
                   Back to Home
-                </Link>
+                </Link>*/}
               </div>
             </div>
           </div>
@@ -387,6 +390,14 @@ const styles = {
     textDecoration: "none",
     color: "#1d4ed8",
     background: "#eff6ff",
+    fontWeight: "700",
+    padding: "10px 14px",
+    borderRadius: "12px",
+  },
+  Logout: {
+    textDecoration: "none",
+    color: "#dc2626",
+    background: "#fee2e2",
     fontWeight: "700",
     padding: "10px 14px",
     borderRadius: "12px",
