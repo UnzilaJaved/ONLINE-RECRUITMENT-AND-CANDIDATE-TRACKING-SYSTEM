@@ -62,9 +62,27 @@ function CandidateDashboard() {
         </div>
 
         <div style={styles.navLinks}>
-          <Link to="/" style={styles.navLink}>Home</Link>
+          <Link to="/candidate-dashboard" 
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          style={styles.navLink}>
+            Home
+          </Link>
+          {/*}
           <Link to="/jobs" style={styles.navLink}>Jobs</Link>
-          <Link to="/application-status" style={styles.activeNavLink}>Status</Link>
+          */}
+          <Link to="/application-status" 
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+          style={styles.activeNavLink}>
+            Status
+          </Link>
+          <Link to="/candidate-login" 
+          onClick={() => {
+            localStorage.removeItem("user");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }} 
+          style={styles.logout}>
+            Logout
+          </Link>
         </div>
       </nav>
 
@@ -144,13 +162,14 @@ const styles = {
   navLinks: { display: "flex", gap: "10px" },
   navLink: { textDecoration: "none" },
   activeNavLink: { color: "blue" },
-  container: { marginTop: "20px" },
+  container: { padding: "28px 36px 36px 36px"},
   heroSection: { marginBottom: "20px" },
   statsGrid: { display: "flex", gap: "10px" },
   statCard: { padding: "10px", border: "1px solid #ddd" },
   applicationGrid: { display: "grid", gap: "10px" },
   applicationCard: { padding: "10px", border: "1px solid #ddd" },
   statusBadge: { padding: "5px 10px", borderRadius: "10px" },
+  logout: { textDecoration: "none", color: "#dc2626", fontWeight: "700", background: "#fee2e2", padding: "10px 14px", borderRadius: "12px" },
 };
 
 export default CandidateDashboard;

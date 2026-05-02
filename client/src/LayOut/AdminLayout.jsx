@@ -16,13 +16,46 @@ function AdminLayout() {
           <div style={styles.sidebarSection}>
             <p style={styles.sidebarLabel}>Main Menu</p>
 
-            <Link to="/" style={styles.navItem}>Dashboard</Link>
-            <Link to="/admin/jobs" style={styles.navItem}>Manage Jobs</Link>
-            <Link to="/admin/applications" style={styles.navItem}>Applications</Link>
-            <Link to="/admin/shortlist" style={styles.navItem}>Shortlisting</Link>
-            <Link to="/admin/interview" style={styles.navItem}>Interviews</Link>
-            <Link to="/admin/feedback" style={styles.navItem}>Decisions</Link>
-            <Link to="/admin/reports" style={styles.navItem}>Reports</Link>
+            <Link to="/admin/dashboard" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}  
+            style={styles.navItem}>
+              Dashboard
+            </Link>
+            <Link to="/admin/jobs" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+            style={styles.navItem}>
+              Manage Jobs
+            </Link>
+            <Link to="/admin/applications" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+            style={styles.navItem}>
+              Applications
+            </Link>
+            <Link to="/admin/shortlist" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+            style={styles.navItem}>
+              Shortlisting
+            </Link>
+            <Link to="/admin/interview" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+            style={styles.navItem}>
+              Interviews
+            </Link>
+            <Link to="/admin/feedback" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+            style={styles.navItem}>
+              Decisions
+            </Link>
+            <Link to="/admin/reports" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+            style={styles.navItem}>
+              Reports
+            </Link>
+            <Link to="/admin-login" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+            style={styles.Logout}>
+              Logout
+            </Link>
           </div>
         </div>
       </aside>
@@ -97,6 +130,17 @@ const styles = {
     fontWeight: "600",
     display: "block",
     background: "rgba(255,255,255,0.03)",
+    transition: "all 0.2s ease",
+    wordBreak: "break-word",
+  },
+  Logout: {
+    textDecoration: "none",
+    color: "#dc2626",
+    background: "#fee2e2",
+    padding: "15px 14px",
+    borderRadius: "17px",
+    marginTop: "122px",
+    fontWeight: "700",
   },
 };
 

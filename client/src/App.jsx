@@ -17,6 +17,7 @@ import CandidateDashboard from "./Pages/Candidate/CandidateDashboard";
 import ApplicationStatus from "./Pages/Candidate/ApplicationStatus";
 
 // HR Pages
+import AdminLogin from "./Pages/Admin/AdminLogin";
 import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import ManageJobs from "./Pages/Admin/ManageJobs";
 import Applications from "./Pages/Admin/Applications";
@@ -109,6 +110,7 @@ function App() {
         <Route path="/application-success" element={<ApplicationSuccess />} />
 
         {/* HR Protected Routes */}
+        <Route path="/admin-login" element={<AdminLogin />} />
         <Route
           element={
             <ProtectedRoute user={user} role={role} allowedRole="hr">
