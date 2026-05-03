@@ -1,16 +1,17 @@
-﻿import { Link, useNavigate } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { useState } from "react";
 
 function CandidateLogin() {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -19,20 +20,45 @@ function CandidateLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    })
+    setLoading(true);
 
-    const data = await res.json()
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    if (res.ok) {
-      navigate('/candidate-dashboard')
-    } else {
-      alert(data.error)
+      const data = await res.json();
+
+      console.log("LOGIN RESPONSE:", data);
+
+      if (!res.ok) {
+        alert(data.error || "Login failed");
+        setLoading(false);
+        return;
+      }
+
+      // 🔴 Only allow candidate login
+      if (data.role !== "candidate") {
+        alert("Please use HR login page");
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Store session
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("role", data.role);
+
+      // ✅ Force reload to sync state
+      window.location.href = "/candidate-dashboard";
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div style={styles.page}>
@@ -66,11 +92,8 @@ function CandidateLogin() {
           </p>
 
           <form style={styles.form} onSubmit={handleSubmit}>
-            <label style={styles.label} htmlFor="email">
-              Email address
-            </label>
+            <label style={styles.label}>Email address</label>
             <input
-              id="email"
               name="email"
               type="email"
               placeholder="your.email@example.com"
@@ -80,11 +103,8 @@ function CandidateLogin() {
               required
             />
 
-            <label style={styles.label} htmlFor="password">
-              Password
-            </label>
+            <label style={styles.label}>Password</label>
             <input
-              id="password"
               name="password"
               type="password"
               placeholder="Enter your password"
@@ -94,16 +114,23 @@ function CandidateLogin() {
               required
             />
 
-            <button type="submit" style={styles.submitButton}>
-              Sign In
+            <button type="submit" style={styles.submitButton} disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
           <p style={styles.footerText}>
-            Don't have an account? <Link to="/candidate-signup" style={styles.link}>Create one</Link>
+            Don't have an account?{" "}
+            <Link to="/candidate-signup" style={styles.link}>
+              Create one
+            </Link>
           </p>
+
           <p style={styles.footerText}>
-            Sign in as <Link to="/admin-login" style={styles.link}>Admin</Link>
+            Sign in as{" "}
+            <Link to="/admin-login" style={styles.link}>
+              Admin
+            </Link>
           </p>
         </div>
       </div>
@@ -114,7 +141,7 @@ function CandidateLogin() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f8fafc",
+    background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
     fontFamily: "Arial, sans-serif",
     color: "#0f172a",
   },
@@ -122,11 +149,13 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "22px 36px",
+    padding: "14px 24px",
     background: "#ffffff",
     borderBottom: "1px solid #e2e8f0",
-    position: "sticky",
+    position: "fixed",
     top: 0,
+    left: 0,
+    right: 0,
     zIndex: 10,
   },
   logoWrap: {
@@ -175,11 +204,12 @@ const styles = {
     borderRadius: "12px",
   },
   container: {
-    minHeight: "calc(100vh - 93px)",
+    height: "100vh",
+    boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    padding: "36px",
+    padding: "1px 36px 12px",
   },
   loginCard: {
     width: "100%",
@@ -203,16 +233,16 @@ const styles = {
   },
   form: {
     display: "grid",
-    gap: "18px",
+    gap: "8px",
   },
   label: {
     fontSize: "14px",
     fontWeight: "700",
-    marginBottom: "8px",
     color: "#334155",
   },
   input: {
     width: "100%",
+    boxSizing: "border-box",
     padding: "14px 16px",
     borderRadius: "14px",
     border: "1px solid #d1d5db",
@@ -220,6 +250,8 @@ const styles = {
     color: "#0f172a",
   },
   submitButton: {
+    width: "100%",
+    boxSizing: "border-box",
     background: "#2563eb",
     color: "#ffffff",
     border: "none",
@@ -228,9 +260,9 @@ const styles = {
     fontSize: "16px",
     fontWeight: "700",
     cursor: "pointer",
+    marginBottom: "12px",
   },
   footerText: {
-    margin: "24px 0 0",
     color: "#64748b",
     fontSize: "14px",
   },

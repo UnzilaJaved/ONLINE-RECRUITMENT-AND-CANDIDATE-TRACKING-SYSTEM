@@ -1,12 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useState, useEffect } from "react";
 
 function Jobs() {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState("All");
   const [selectedLocation, setSelectedLocation] = useState("All");
-  const [loading, setLoading] = useState(true);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
+    navigate("/candidate-login");
+  };
 
   // Fetch jobs from backend
   useEffect(() => {
@@ -14,9 +20,8 @@ function Jobs() {
       .then((res) => res.json())
       .then((data) => {
         setJobs(data);
-        setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {});
   }, []);
 
   // Filtering logic
@@ -35,23 +40,30 @@ function Jobs() {
     });
   }, [jobs, search, selectedType, selectedLocation]);
 
-  if (loading) return <h2 style={{ padding: "40px" }}>Loading jobs...</h2>;
-
   return (
     <div style={styles.page}>
       <nav style={styles.navbar}>
         <div style={styles.logoWrap}>
           <div style={styles.logo}>JA</div>
-          <div>
-            <h2 style={styles.logoTitle}>JAPS</h2>
-            <p style={styles.logoSub}>Job Application Processing System</p>
+            <div>
+              <h2 style={styles.logoTitle}>JAPS</h2>
+              <p style={styles.logoSub}>Candidate Dashboard</p>
+            </div>
           </div>
-        </div>
-
+      
         <div style={styles.navLinks}>
-          <Link to="/" style={styles.navLink}>Home</Link>
-          <Link to="/jobs" style={styles.activeNavLink}>Jobs</Link>
-          <Link to="/candidate-login" style={styles.navLink}>Login</Link>
+          <Link to="/candidate-dashboard" style={styles.navLink}>
+            Dashboard
+          </Link>
+          <Link to="/jobs" style={styles.navLink}>
+            Jobs
+          </Link>
+          <Link to="/application-status" style={styles.activeNavLink}>
+            Status
+          </Link>
+          <button type="button" onClick={handleLogout} style={styles.logoutButton}>
+            Logout
+          </button>
         </div>
       </nav>
 
@@ -212,6 +224,16 @@ const styles = {
     fontWeight: "700",
     padding: "10px 14px",
     borderRadius: "12px",
+  },
+  logoutButton: {
+    border: "1px solid #fecaca",
+    background: "#fef2f2",
+    color: "#b91c1c",
+    padding: "10px 14px",
+    borderRadius: "12px",
+    cursor: "pointer",
+    fontWeight: "700",
+    fontSize: "14px",
   },
   hero: {
     margin: "28px 36px 20px 36px",

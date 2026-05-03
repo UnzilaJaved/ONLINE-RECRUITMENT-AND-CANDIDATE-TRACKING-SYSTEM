@@ -17,7 +17,7 @@ function JobDetails() {
       .catch(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <h2 style={{ padding: "40px" }}>Loading job...</h2>;
+  if (loading) return null;
   if (!job) return <h2 style={{ padding: "40px" }}>Job not found</h2>;
 
   return (
@@ -82,15 +82,6 @@ function JobDetails() {
             <div style={styles.card}>
               <h3 style={styles.cardTitle}>Description</h3>
               <p style={styles.cardText}>{job.description}</p>
-            </div>
-          </div>
-
-          <div style={styles.rightColumn}>
-            <div style={styles.card}>
-              <h3 style={styles.cardTitle}>Apply Now</h3>
-              <Link to={`/apply/${job.id}`} style={styles.applyButtonFull}>
-                Apply Now
-              </Link>
             </div>
           </div>
         </section>

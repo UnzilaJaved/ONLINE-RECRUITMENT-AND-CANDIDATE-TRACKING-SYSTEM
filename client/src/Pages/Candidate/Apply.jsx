@@ -20,6 +20,12 @@ function Apply() {
     resume: null,
   });
 
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
+    navigate("/candidate-login");
+  };
+
   // 🔹 Fetch job from backend
   useEffect(() => {
     fetch(`/api/jobs/${id}`)
@@ -69,7 +75,7 @@ function Apply() {
     }
   };
 
-  if (loading) return <h2 style={{ padding: "40px" }}>Loading...</h2>;
+  if (loading) return null;
   if (!job) return <h2 style={{ padding: "40px" }}>Job not found</h2>;
 
   return (
@@ -79,14 +85,23 @@ function Apply() {
           <div style={styles.logo}>JA</div>
           <div>
             <h2 style={styles.logoTitle}>JAPS</h2>
-            <p style={styles.logoSub}>Job Application Processing System</p>
+            <p style={styles.logoSub}>Candidate Dashboard</p>
           </div>
         </div>
-
+            
         <div style={styles.navLinks}>
-          <Link to="/" style={styles.navLink}>Home</Link>
-          <Link to="/jobs" style={styles.navLink}>Jobs</Link>
-          <Link to="/candidate-login" style={styles.navLink}>Login</Link>
+          <Link to="/candidate-dashboard" style={styles.navLink}>
+            Dashboard
+          </Link>
+          <Link to="/jobs" style={styles.navLink}>
+             Jobs
+          </Link>
+          <Link to="/application-status" style={styles.activeNavLink}>
+            Status
+          </Link>
+          <button type="button" onClick={handleLogout} style={styles.logoutButton}>
+            Logout
+          </button>
         </div>
       </nav>
 
@@ -100,31 +115,108 @@ function Apply() {
         <div style={styles.grid}>
           <div style={styles.leftColumn}>
             <div style={styles.heroCard}>
+              <p style={styles.heroMini}>Application Form</p>
               <h1 style={styles.heroTitle}>Apply for {job.title}</h1>
+              <p style={styles.heroText}>
+                Fill in your profile details carefully. Your application moves
+                directly into the recruiter pipeline shown on your dashboard.
+              </p>
               <div style={styles.jobMetaRow}>
                 <span style={styles.metaPill}>📍 {job.location}</span>
                 <span style={styles.metaPill}>💼 {job.type}</span>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} style={styles.form}>
-              <input name="fullName" onChange={handleChange} placeholder="Full Name" />
-              <input name="email" onChange={handleChange} placeholder="Email" />
-              <input name="phone" onChange={handleChange} placeholder="Phone" />
-              <input name="city" onChange={handleChange} placeholder="City" />
-              <input name="education" onChange={handleChange} placeholder="Education" />
-              <input name="experience" onChange={handleChange} placeholder="Experience" />
-              <input name="skills" onChange={handleChange} placeholder="Skills" />
-              <textarea name="coverLetter" onChange={handleChange} placeholder="Cover Letter" />
-              <input type="file" name="resume" onChange={handleChange} />
+            <div style={styles.formCard}>
+              <p style={styles.cardMini}>Candidate Details</p>
+              <h3 style={styles.cardTitle}>Application Information</h3>
 
-              <button type="submit">Submit Application</button>
-            </form>
+              <form onSubmit={handleSubmit} style={styles.form}>
+                <div style={styles.formGrid}>
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.label} htmlFor="fullName">Full Name</label>
+                    <input id="fullName" name="fullName" onChange={handleChange} placeholder="Enter your full name" style={styles.input} required />
+                  </div>
+
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.label} htmlFor="email">Email</label>
+                    <input id="email" name="email" type="email" onChange={handleChange} placeholder="you@example.com" style={styles.input} required />
+                  </div>
+
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.label} htmlFor="phone">Phone</label>
+                    <input id="phone" name="phone" onChange={handleChange} placeholder="+92 300 0000000" style={styles.input} required />
+                  </div>
+
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.label} htmlFor="city">City</label>
+                    <input id="city" name="city" onChange={handleChange} placeholder="Lahore" style={styles.input} required />
+                  </div>
+
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.label} htmlFor="education">Education</label>
+                    <input id="education" name="education" onChange={handleChange} placeholder="BS Computer Science" style={styles.input} required />
+                  </div>
+
+                  <div style={styles.fieldWrap}>
+                    <label style={styles.label} htmlFor="experience">Experience</label>
+                    <input id="experience" name="experience" onChange={handleChange} placeholder="2 years" style={styles.input} required />
+                  </div>
+                </div>
+
+                <div style={styles.fullWidthField}>
+                  <label style={styles.label} htmlFor="skills">Skills</label>
+                  <input id="skills" name="skills" onChange={handleChange} placeholder="React, Node.js, PostgreSQL" style={styles.input} required />
+                </div>
+
+                <div style={styles.fullWidthField}>
+                  <label style={styles.label} htmlFor="coverLetter">Cover Letter</label>
+                  <textarea id="coverLetter" name="coverLetter" onChange={handleChange} placeholder="Tell us why you are a good fit for this role" style={styles.textarea} required />
+                </div>
+
+                <div style={styles.fullWidthField}>
+                  <label style={styles.label} htmlFor="resume">Resume</label>
+                  <input id="resume" type="file" name="resume" onChange={handleChange} style={styles.fileInput} />
+                </div>
+
+                <div style={styles.actionRow}>
+                  <Link to={`/jobs/${job.id}`} style={styles.cancelButton}>Cancel</Link>
+                  <button type="submit" style={styles.submitButton}>Submit Application</button>
+                </div>
+              </form>
+            </div>
           </div>
 
           <div style={styles.rightColumn}>
-            <h3>{job.title}</h3>
-            <p>{job.location}</p>
+            <div style={{ ...styles.summaryCard, ...styles.roleSummaryCard }}>
+              <p style={{ ...styles.cardMini, ...styles.roleSummaryMini }}>Role Summary</p>
+              <h3 style={styles.cardTitle}>{job.title}</h3>
+
+              <div style={styles.infoList}>
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Location</span>
+                  <span style={styles.infoValue}>{job.location || "-"}</span>
+                </div>
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Type</span>
+                  <span style={styles.infoValue}>{job.type || "-"}</span>
+                </div>
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Department</span>
+                  <span style={styles.infoValue}>{job.department || "General"}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ ...styles.summaryCard, ...styles.tipsSummaryCard }}>
+              <p style={{ ...styles.cardMini, ...styles.tipsSummaryMini }}>Tips</p>
+              <h3 style={styles.cardTitle}>Before You Submit</h3>
+              <div style={styles.tipList}>
+                <div style={{ ...styles.tipItem, ...styles.tipItemOne }}>Keep your cover letter role-specific and concise.</div>
+                <div style={{ ...styles.tipItem, ...styles.tipItemTwo }}>Highlight measurable achievements in your skills and experience.</div>
+                <div style={{ ...styles.tipItem, ...styles.tipItemThree }}>Double-check contact details so recruiters can reach you quickly.</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -186,6 +278,24 @@ const styles = {
     color: "#334155",
     fontWeight: "600",
     padding: "10px 14px",
+  },
+  activeNavLink: {
+    textDecoration: "none",
+    color: "#1d4ed8",
+    background: "#eff6ff",
+    fontWeight: "700",
+    padding: "10px 14px",
+    borderRadius: "12px",
+  },
+  logoutButton: {
+    border: "1px solid #fecaca",
+    background: "#fef2f2",
+    color: "#b91c1c",
+    fontWeight: "700",
+    padding: "10px 14px",
+    borderRadius: "12px",
+    cursor: "pointer",
+    fontSize: "14px",
   },
   container: {
     padding: "28px 36px 36px 36px",
@@ -263,10 +373,28 @@ const styles = {
     boxShadow: "0 12px 30px rgba(15,23,42,0.06)",
     border: "1px solid #eef2f7",
   },
+  roleSummaryCard: {
+    background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 55%)",
+    border: "1px solid #dbeafe",
+  },
+  tipsSummaryCard: {
+    background: "linear-gradient(135deg, #f5f3ff 0%, #ffffff 55%)",
+    border: "1px solid #e9d5ff",
+  },
   cardMini: {
     margin: 0,
     color: "#64748b",
     fontSize: "13px",
+  },
+  roleSummaryMini: {
+    color: "#1d4ed8",
+    fontWeight: "700",
+    letterSpacing: "0.2px",
+  },
+  tipsSummaryMini: {
+    color: "#6d28d9",
+    fontWeight: "700",
+    letterSpacing: "0.2px",
   },
   cardTitle: {
     margin: "8px 0 18px 0",
@@ -360,6 +488,18 @@ const styles = {
     color: "#334155",
     lineHeight: 1.6,
     fontSize: "14px",
+  },
+  tipItemOne: {
+    background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)",
+    border: "1px solid #bfdbfe",
+  },
+  tipItemTwo: {
+    background: "linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%)",
+    border: "1px solid #ddd6fe",
+  },
+  tipItemThree: {
+    background: "linear-gradient(135deg, #ecfeff 0%, #ffffff 100%)",
+    border: "1px solid #a5f3fc",
   },
   infoList: {
     display: "grid",

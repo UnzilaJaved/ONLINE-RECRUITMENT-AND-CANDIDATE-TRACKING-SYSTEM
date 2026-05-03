@@ -260,12 +260,12 @@ const styles = {
   secondaryButton: {
     textDecoration: "none",
     display: "inline-block",
-    background: "#ffffff",
+    background: "#deeaf6",
     color: "#0f172a",
     padding: "14px 20px",
     borderRadius: "14px",
     fontWeight: "700",
-    border: "1px solid #dbe2ea",
+    border: "1px solid #cbd5e1",
   },
 };
 

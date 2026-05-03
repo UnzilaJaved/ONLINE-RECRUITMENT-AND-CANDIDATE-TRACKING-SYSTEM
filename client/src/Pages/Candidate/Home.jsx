@@ -50,7 +50,9 @@ function Home() {
 
         <div style={styles.navLinks}>
           <Link to="/" style={styles.navLink}>Home</Link>
+          {/*
           <Link to="/jobs" style={styles.navLink}>Jobs</Link>
+          */}
           <Link to="/candidate-login" style={styles.navLink}>Login</Link>
           <Link to="/admin-login" style={styles.adminButton}>Admin</Link>
         </div>

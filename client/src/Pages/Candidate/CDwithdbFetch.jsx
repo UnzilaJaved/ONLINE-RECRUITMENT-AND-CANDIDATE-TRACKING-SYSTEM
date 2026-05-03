@@ -1,7 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 function CandidateDashboard() {
   const navigate = useNavigate();
+
+  const [applications, setApplications] = useState([]);
+  const [profile, setProfile] = useState(null);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -9,74 +13,68 @@ function CandidateDashboard() {
     navigate("/candidate-login");
   };
 
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user) {
+      navigate("/candidate-login");
+      return;
+    }
+
+    fetch(`/api/candidate/dashboard/${user.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("DASHBOARD DATA:", data);
+
+        setApplications(data.applications || []);
+        setProfile(data.profile || {});
+      })
+      .catch((err) => console.error(err));
+  }, [navigate]);
+
+  // 🔥 DYNAMIC STATS
   const stats = [
     {
       label: "Applications Submitted",
-      value: "3",
+      value: applications.length,
       note: "Across active roles",
-      trend: "+1 this week",
+      trend: `${applications.length} total`,
     },
     {
       label: "Under Review",
-      value: "1",
+      value: applications.filter((a) => a.status === "applied").length,
       note: "Waiting on recruiter review",
       trend: "In progress",
     },
     {
       label: "Shortlisted",
-      value: "1",
+      value: applications.filter((a) => a.status === "shortlisted").length,
       note: "Moved to next stage",
       trend: "Strong profile",
     },
     {
       label: "Interviews",
-      value: "1",
+      value: applications.filter((a) => a.status === "interview").length,
       note: "Upcoming interview round",
       trend: "Scheduled",
     },
   ];
 
-  const applications = [
-    {
-      id: "APP-101",
-      role: "Frontend Developer",
-      company: "JAPS Tech",
-      date: "20 Apr 2026",
-      status: "Under Review",
-      progress: 45,
-    },
-    {
-      id: "APP-102",
-      role: "UI/UX Designer",
-      company: "JAPS Design",
-      date: "18 Apr 2026",
-      status: "Shortlisted",
-      progress: 72,
-    },
-    {
-      id: "APP-103",
-      role: "Backend Developer",
-      company: "JAPS Engineering",
-      date: "16 Apr 2026",
-      status: "Interview Scheduled",
-      progress: 90,
-    },
-  ];
+  // 🔥 DYNAMIC APPLICATIONS
+  const mappedApplications = applications.map((app, index) => ({
+    id: `APP-${index + 1}`,
+    role: app.jobs?.title,
+    company: app.jobs?.department,
+    date: new Date(app.applied_at).toDateString(),
+    status: formatStatus(app.status),
+    progress: getProgress(app.status),
+  }));
 
-  const updates = [
-    {
-      title: "Frontend Developer",
-      text: "Your application is under initial review by the hiring team.",
-    },
-    {
-      title: "UI/UX Designer",
-      text: "Congratulations — you have been shortlisted for the next stage.",
-    },
-    {
-      title: "Backend Developer",
-      text: "Your interview is scheduled for 25 Apr 2026 at 11:00 AM.",
-    },
-  ];
+  // 🔥 DYNAMIC UPDATES
+  const updates = applications.map((app) => ({
+    title: app.jobs?.title,
+    text: `Your application is currently ${formatStatus(app.status)}.`,
+  }));
 
   const timeline = [
     { step: "Application Submitted", active: true },
@@ -88,6 +86,7 @@ function CandidateDashboard() {
 
   return (
     <div style={styles.page}>
+      {/* NAVBAR SAME */}
       <nav style={styles.navbar}>
         <div style={styles.logoWrap}>
           <div style={styles.logo}>JA</div>
@@ -107,21 +106,18 @@ function CandidateDashboard() {
           <Link to="/application-status" style={styles.activeNavLink}>
             Status
           </Link>
-          <button type="button" onClick={handleLogout} style={styles.logoutButton}>
+          <button onClick={handleLogout} style={styles.logoutButton}>
             Logout
           </button>
         </div>
       </nav>
 
       <div style={styles.container}>
+        {/* HERO */}
         <section style={styles.heroSection}>
           <div style={styles.heroLeft}>
             <p style={styles.heroMini}>Welcome back</p>
             <h1 style={styles.heroTitle}>Your hiring journey, all in one place</h1>
-            <p style={styles.heroText}>
-              Track applications, monitor progress, follow interview updates,
-              and stay informed with a polished candidate experience.
-            </p>
 
             <div style={styles.heroButtons}>
               <Link to="/application-status" style={styles.primaryButton}>
@@ -136,9 +132,13 @@ function CandidateDashboard() {
           <div style={styles.heroRight}>
             <div style={styles.profileCard}>
               <div style={styles.profileTop}>
-                <div style={styles.profileAvatar}>A</div>
+                <div style={styles.profileAvatar}>
+                  {profile?.full_name?.charAt(0) || "U"}
+                </div>
                 <div>
-                  <p style={styles.profileName}>Hassan</p>
+                  <p style={styles.profileName}>
+                    {profile?.full_name || "User"}
+                  </p>
                   <p style={styles.profileRole}>Candidate Portal</p>
                 </div>
               </div>
@@ -146,39 +146,35 @@ function CandidateDashboard() {
               <div style={styles.profileDivider}></div>
 
               <div style={styles.profileInfoList}>
-                <InfoRow label="Candidate ID" value="C-2026-041" />
-                <InfoRow label="Active Applications" value="3" />
-                <InfoRow label="Interview Stage" value="1 Ongoing" />
+                <InfoRow label="Candidate ID" value={profile?.id?.slice(0, 8)} />
+                <InfoRow label="Active Applications" value={applications.length} />
+                <InfoRow label="Interview Stage" value={
+                  applications.filter(a => a.status === "interview").length
+                } />
               </div>
             </div>
           </div>
         </section>
 
+        {/* STATS */}
         <section style={styles.statsGrid}>
           {stats.map((item, index) => (
             <div key={index} style={styles.statCard}>
-              <div style={styles.statTop}>
-                <p style={styles.statLabel}>{item.label}</p>
-                <span style={styles.statTrend}>{item.trend}</span>
-              </div>
+              <p style={styles.statLabel}>{item.label}</p>
               <h2 style={styles.statValue}>{item.value}</h2>
               <p style={styles.statNote}>{item.note}</p>
             </div>
           ))}
         </section>
 
+        {/* APPLICATIONS */}
         <section style={styles.mainGrid}>
           <div style={styles.leftColumn}>
             <div style={styles.panel}>
-              <div style={styles.panelHeader}>
-                <div>
-                  <p style={styles.panelMini}>My Applications</p>
-                  <h3 style={styles.panelTitle}>Application Overview</h3>
-                </div>
-              </div>
+              <h3 style={styles.panelTitle}>Application Overview</h3>
 
               <div style={styles.applicationGrid}>
-                {applications.map((item, index) => (
+                {mappedApplications.map((item, index) => (
                   <div key={index} style={styles.applicationCard}>
                     <div style={styles.applicationTop}>
                       <div>
@@ -187,131 +183,45 @@ function CandidateDashboard() {
                         <p style={styles.appCompany}>{item.company}</p>
                       </div>
 
-                      <span
-                        style={{
-                          ...styles.statusBadge,
-                          background: getStatusStyle(item.status).bg,
-                          color: getStatusStyle(item.status).text,
-                        }}
-                      >
+                      <span style={styles.statusBadge}>
                         {item.status}
                       </span>
                     </div>
 
-                    <div style={styles.appMetaRow}>
-                      <span style={styles.metaPill}>Submitted: {item.date}</span>
-                    </div>
-
-                    <div style={styles.progressWrap}>
-                      <div style={styles.progressTop}>
-                        <span style={styles.progressLabel}>Progress</span>
-                        <span style={styles.progressValue}>{item.progress}%</span>
-                      </div>
-                      <div style={styles.progressBarBg}>
-                        <div
-                          style={{
-                            ...styles.progressBarFill,
-                            width: `${item.progress}%`,
-                          }}
-                        ></div>
-                      </div>
+                    <div style={styles.progressBarBg}>
+                      <div
+                        style={{
+                          ...styles.progressBarFill,
+                          width: `${item.progress}%`,
+                        }}
+                      />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* UPDATES */}
             <div style={styles.panel}>
-              <div style={styles.panelHeader}>
-                <div>
-                  <p style={styles.panelMini}>Latest Activity</p>
-                  <h3 style={styles.panelTitle}>Recent Updates</h3>
-                </div>
-              </div>
+              <h3 style={styles.panelTitle}>Recent Updates</h3>
 
-              <div style={styles.updateList}>
-                {updates.map((item, index) => (
-                  <div key={index} style={styles.updateItem}>
-                    <h4 style={styles.updateTitle}>{item.title}</h4>
-                    <p style={styles.updateText}>{item.text}</p>
-                  </div>
-                ))}
-              </div>
+              {updates.map((u, i) => (
+                <div key={i}>
+                  <h4>{u.title}</h4>
+                  <p>{u.text}</p>
+                </div>
+              ))}
             </div>
           </div>
 
+          {/* TIMELINE */}
           <div style={styles.rightColumn}>
             <div style={styles.panel}>
-              <div style={styles.panelHeader}>
-                <div>
-                  <p style={styles.panelMini}>Current Progress</p>
-                  <h3 style={styles.panelTitle}>Hiring Timeline</h3>
-                </div>
-              </div>
+              <h3 style={styles.panelTitle}>Hiring Timeline</h3>
 
-              <div style={styles.timelineList}>
-                {timeline.map((item, index) => (
-                  <div key={index} style={styles.timelineItem}>
-                    <div
-                      style={{
-                        ...styles.timelineDot,
-                        background: item.active ? "#2563eb" : "#cbd5e1",
-                        color: "#fff",
-                      }}
-                    >
-                      {index + 1}
-                    </div>
-                    <p
-                      style={{
-                        ...styles.timelineText,
-                        color: item.active ? "#0f172a" : "#94a3b8",
-                      }}
-                    >
-                      {item.step}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={styles.panel}>
-              <div style={styles.panelHeader}>
-                <div>
-                  <p style={styles.panelMini}>Upcoming</p>
-                  <h3 style={styles.panelTitle}>Interview Highlight</h3>
-                </div>
-              </div>
-
-              <div style={styles.interviewCard}>
-                <p style={styles.interviewRole}>Backend Developer</p>
-                <h4 style={styles.interviewHeading}>Technical Interview</h4>
-                <p style={styles.interviewDetail}>25 Apr 2026 • 11:00 AM</p>
-                <p style={styles.interviewDetail}>Mode: Google Meet</p>
-                <Link to="/application-status" style={styles.primaryButtonFull}>
-                  Open Status Page
-                </Link>
-              </div>
-            </div>
-
-            <div style={styles.panel}>
-              <div style={styles.panelHeader}>
-                <div>
-                  <p style={styles.panelMini}>Quick Actions</p>
-                  <h3 style={styles.panelTitle}>Candidate Tools</h3>
-                </div>
-              </div>
-
-              <div style={styles.actionList}>
-                <Link to="/application-status" style={styles.actionButton}>
-                  View Full Status
-                </Link>
-                <Link to="/jobs" style={styles.actionButton}>
-                  Browse Jobs
-                </Link>
-                <Link to="/" style={styles.actionButton}>
-                  Back to Home
-                </Link>
-              </div>
+              {timeline.map((t, i) => (
+                <div key={i}>{t.step}</div>
+              ))}
             </div>
           </div>
         </section>
@@ -320,23 +230,34 @@ function CandidateDashboard() {
   );
 }
 
+/* HELPERS */
 function InfoRow({ label, value }) {
   return (
     <div style={styles.infoRow}>
-      <span style={styles.infoLabel}>{label}</span>
-      <span style={styles.infoValue}>{value}</span>
+      <span>{label}</span>
+      <span>{value}</span>
     </div>
   );
 }
 
-function getStatusStyle(status) {
-  if (status === "Shortlisted") {
-    return { bg: "#dcfce7", text: "#166534" };
+function formatStatus(status) {
+  const map = {
+    applied: "Under Review",
+    shortlisted: "Shortlisted",
+    interview: "Interview Scheduled",
+    offered: "Offer Received",
+  };
+  return map[status] || status;
+}
+
+function getProgress(status) {
+  switch (status) {
+    case "applied": return 25;
+    case "shortlisted": return 60;
+    case "interview": return 85;
+    case "offered": return 100;
+    default: return 40;
   }
-  if (status === "Interview Scheduled") {
-    return { bg: "#ede9fe", text: "#5b21b6" };
-  }
-  return { bg: "#dbeafe", text: "#1d4ed8" };
 }
 
 const styles = {
@@ -794,3 +715,4 @@ const styles = {
 };
 
 export default CandidateDashboard;
+
