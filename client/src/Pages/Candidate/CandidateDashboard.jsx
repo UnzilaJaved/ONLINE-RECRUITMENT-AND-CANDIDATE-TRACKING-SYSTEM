@@ -1,7 +1,34 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 function CandidateDashboard() {
   const navigate = useNavigate();
+
+  const [applications, setApplications] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // ── Auth guard + data fetch ──────────────────────────────────────────────
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("user") || "null");
+
+    if (!stored) {
+      navigate("/candidate-login");
+      return;
+    }
+
+    // Fetch both dashboard apps and profile in parallel
+    Promise.all([
+      fetch(`/api/candidate/dashboard/${stored.id}`).then((r) => r.json()),
+      fetch(`/api/candidate/profile/${stored.id}`).then((r) => r.json()),
+    ])
+      .then(([appsData, profileData]) => {
+        setApplications(Array.isArray(appsData) ? appsData : []);
+        setProfile(profileData?.error ? null : profileData);
+      })
+      .catch((err) => console.error("Dashboard fetch error:", err))
+      .finally(() => setLoading(false));
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -9,82 +36,83 @@ function CandidateDashboard() {
     navigate("/candidate-login");
   };
 
+  // ── Derived display values ───────────────────────────────────────────────
+  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+  const displayName =
+    profile?.full_name || storedUser?.email?.split("@")[0] || "Candidate";
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+
+  // Stats computed from real application statuses
   const stats = [
     {
       label: "Applications Submitted",
-      value: "3",
+      value: applications.length,
       note: "Across active roles",
-      trend: "+1 this week",
+      trend: `${applications.length} total`,
     },
     {
       label: "Under Review",
-      value: "1",
+      value: applications.filter((a) => a.status === "applied").length,
       note: "Waiting on recruiter review",
       trend: "In progress",
     },
     {
       label: "Shortlisted",
-      value: "1",
+      value: applications.filter((a) => a.status === "shortlisted").length,
       note: "Moved to next stage",
       trend: "Strong profile",
     },
     {
       label: "Interviews",
-      value: "1",
+      value: applications.filter((a) => a.status === "interview").length,
       note: "Upcoming interview round",
       trend: "Scheduled",
     },
   ];
 
-  const applications = [
-    {
-      id: "APP-101",
-      role: "Frontend Developer",
-      company: "JAPS Tech",
-      date: "20 Apr 2026",
-      status: "Under Review",
-      progress: 45,
-    },
-    {
-      id: "APP-102",
-      role: "UI/UX Designer",
-      company: "JAPS Design",
-      date: "18 Apr 2026",
-      status: "Shortlisted",
-      progress: 72,
-    },
-    {
-      id: "APP-103",
-      role: "Backend Developer",
-      company: "JAPS Engineering",
-      date: "16 Apr 2026",
-      status: "Interview Scheduled",
-      progress: 90,
-    },
-  ];
+  // Next upcoming interview across all applications
+  const upcomingInterview =
+    applications
+      .flatMap((app) =>
+        (app.interviews || []).map((iv) => ({
+          ...iv,
+          jobTitle: app.jobs?.title || "Role",
+        })),
+      )
+      .filter((iv) => iv.status === "scheduled" && iv.interview_date)
+      .sort(
+        (a, b) => new Date(a.interview_date) - new Date(b.interview_date),
+      )[0] || null;
 
-  const updates = [
-    {
-      title: "Frontend Developer",
-      text: "Your application is under initial review by the hiring team.",
-    },
-    {
-      title: "UI/UX Designer",
-      text: "Congratulations — you have been shortlisted for the next stage.",
-    },
-    {
-      title: "Backend Developer",
-      text: "Your interview is scheduled for 25 Apr 2026 at 11:00 AM.",
-    },
-  ];
+  // Recent updates: one line per application describing current status
+  const updates = applications.slice(0, 5).map((app) => ({
+    title: app.jobs?.title || "Untitled Role",
+    text: getStatusUpdateText(app.status, upcomingInterview, app.jobs?.title),
+  }));
 
+  // Hiring timeline — highlight steps reached based on the furthest status
+  const furthestStatus = getFurthestStatus(applications);
   const timeline = [
     { step: "Application Submitted", active: true },
-    { step: "Initial Review", active: true },
-    { step: "Shortlisting", active: true },
-    { step: "Interview", active: true },
-    { step: "Final Decision", active: false },
+    {
+      step: "Initial Review",
+      active:
+        ["shortlisted", "interview", "offered", "rejected"].includes(
+          furthestStatus,
+        ) || furthestStatus === "applied",
+    },
+    {
+      step: "Shortlisting",
+      active: ["shortlisted", "interview", "offered"].includes(furthestStatus),
+    },
+    {
+      step: "Interview",
+      active: ["interview", "offered"].includes(furthestStatus),
+    },
+    { step: "Final Decision", active: furthestStatus === "offered" },
   ];
+
+  if (loading) return null;
 
   return (
     <div style={styles.page}>
@@ -98,26 +126,33 @@ function CandidateDashboard() {
         </div>
 
         <div style={styles.navLinks}>
-          <Link to="/candidate-dashboard" style={styles.navLink}>
+          <Link to="/candidate-dashboard" style={styles.activeNavLink}>
             Dashboard
           </Link>
           <Link to="/jobs" style={styles.navLink}>
             Jobs
           </Link>
-          <Link to="/application-status" style={styles.activeNavLink}>
+          <Link to="/application-status" style={styles.navLink}>
             Status
           </Link>
-          <button type="button" onClick={handleLogout} style={styles.logoutButton}>
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={styles.logoutButton}
+          >
             Logout
           </button>
         </div>
       </nav>
 
       <div style={styles.container}>
+        {/* ── Hero ── */}
         <section style={styles.heroSection}>
           <div style={styles.heroLeft}>
             <p style={styles.heroMini}>Welcome back</p>
-            <h1 style={styles.heroTitle}>Your hiring journey, all in one place</h1>
+            <h1 style={styles.heroTitle}>
+              Your hiring journey, all in one place
+            </h1>
             <p style={styles.heroText}>
               Track applications, monitor progress, follow interview updates,
               and stay informed with a polished candidate experience.
@@ -136,9 +171,9 @@ function CandidateDashboard() {
           <div style={styles.heroRight}>
             <div style={styles.profileCard}>
               <div style={styles.profileTop}>
-                <div style={styles.profileAvatar}>A</div>
+                <div style={styles.profileAvatar}>{avatarLetter}</div>
                 <div>
-                  <p style={styles.profileName}>Hassan</p>
+                  <p style={styles.profileName}>{displayName}</p>
                   <p style={styles.profileRole}>Candidate Portal</p>
                 </div>
               </div>
@@ -146,14 +181,30 @@ function CandidateDashboard() {
               <div style={styles.profileDivider}></div>
 
               <div style={styles.profileInfoList}>
-                <InfoRow label="Candidate ID" value="C-2026-041" />
-                <InfoRow label="Active Applications" value="3" />
-                <InfoRow label="Interview Stage" value="1 Ongoing" />
+                <InfoRow
+                  label="Email"
+                  value={profile?.email || storedUser?.email || "—"}
+                />
+                <InfoRow
+                  label="Active Applications"
+                  value={String(
+                    applications.filter((a) => a.status !== "rejected").length,
+                  )}
+                />
+                <InfoRow
+                  label="Interview Stage"
+                  value={
+                    stats[3].value > 0
+                      ? `${stats[3].value} Ongoing`
+                      : "None yet"
+                  }
+                />
               </div>
             </div>
           </div>
         </section>
 
+        {/* ── Stats ── */}
         <section style={styles.statsGrid}>
           {stats.map((item, index) => (
             <div key={index} style={styles.statCard}>
@@ -167,8 +218,10 @@ function CandidateDashboard() {
           ))}
         </section>
 
+        {/* ── Main grid ── */}
         <section style={styles.mainGrid}>
           <div style={styles.leftColumn}>
+            {/* Application Overview */}
             <div style={styles.panel}>
               <div style={styles.panelHeader}>
                 <div>
@@ -177,50 +230,82 @@ function CandidateDashboard() {
                 </div>
               </div>
 
-              <div style={styles.applicationGrid}>
-                {applications.map((item, index) => (
-                  <div key={index} style={styles.applicationCard}>
-                    <div style={styles.applicationTop}>
-                      <div>
-                        <p style={styles.appId}>{item.id}</p>
-                        <h4 style={styles.appRole}>{item.role}</h4>
-                        <p style={styles.appCompany}>{item.company}</p>
-                      </div>
+              {applications.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <p style={styles.emptyTitle}>No applications yet</p>
+                  <p style={styles.emptyText}>
+                    Browse open roles and submit your first application.
+                  </p>
+                  <Link to="/jobs" style={styles.primaryButton}>
+                    Browse Jobs
+                  </Link>
+                </div>
+              ) : (
+                <div style={styles.applicationGrid}>
+                  {applications.map((app, index) => {
+                    const statusLabel = formatStatus(app.status);
+                    const progress = getProgress(app.status);
+                    return (
+                      <div key={app.id || index} style={styles.applicationCard}>
+                        <div style={styles.applicationTop}>
+                          <div>
+                            <p style={styles.appId}>
+                              APP-{String(index + 1).padStart(3, "0")}
+                            </p>
+                            <h4 style={styles.appRole}>
+                              {app.jobs?.title || "Untitled Role"}
+                            </h4>
+                            <p style={styles.appCompany}>
+                              {app.jobs?.department || "General"}
+                            </p>
+                          </div>
 
-                      <span
-                        style={{
-                          ...styles.statusBadge,
-                          background: getStatusStyle(item.status).bg,
-                          color: getStatusStyle(item.status).text,
-                        }}
-                      >
-                        {item.status}
-                      </span>
-                    </div>
+                          <span
+                            style={{
+                              ...styles.statusBadge,
+                              background: getStatusStyle(app.status).bg,
+                              color: getStatusStyle(app.status).text,
+                            }}
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
 
-                    <div style={styles.appMetaRow}>
-                      <span style={styles.metaPill}>Submitted: {item.date}</span>
-                    </div>
+                        <div style={styles.appMetaRow}>
+                          <span style={styles.metaPill}>
+                            Submitted: {formatDate(app.applied_at)}
+                          </span>
+                          {app.jobs?.location && (
+                            <span style={styles.metaPill}>
+                              📍 {app.jobs.location}
+                            </span>
+                          )}
+                        </div>
 
-                    <div style={styles.progressWrap}>
-                      <div style={styles.progressTop}>
-                        <span style={styles.progressLabel}>Progress</span>
-                        <span style={styles.progressValue}>{item.progress}%</span>
+                        <div style={styles.progressWrap}>
+                          <div style={styles.progressTop}>
+                            <span style={styles.progressLabel}>Progress</span>
+                            <span style={styles.progressValue}>
+                              {progress}%
+                            </span>
+                          </div>
+                          <div style={styles.progressBarBg}>
+                            <div
+                              style={{
+                                ...styles.progressBarFill,
+                                width: `${progress}%`,
+                              }}
+                            ></div>
+                          </div>
+                        </div>
                       </div>
-                      <div style={styles.progressBarBg}>
-                        <div
-                          style={{
-                            ...styles.progressBarFill,
-                            width: `${item.progress}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
+            {/* Recent Updates */}
             <div style={styles.panel}>
               <div style={styles.panelHeader}>
                 <div>
@@ -229,18 +314,25 @@ function CandidateDashboard() {
                 </div>
               </div>
 
-              <div style={styles.updateList}>
-                {updates.map((item, index) => (
-                  <div key={index} style={styles.updateItem}>
-                    <h4 style={styles.updateTitle}>{item.title}</h4>
-                    <p style={styles.updateText}>{item.text}</p>
-                  </div>
-                ))}
-              </div>
+              {updates.length === 0 ? (
+                <p style={{ color: "#94a3b8", fontSize: "14px" }}>
+                  No activity yet. Apply to a job to get started.
+                </p>
+              ) : (
+                <div style={styles.updateList}>
+                  {updates.map((item, index) => (
+                    <div key={index} style={styles.updateItem}>
+                      <h4 style={styles.updateTitle}>{item.title}</h4>
+                      <p style={styles.updateText}>{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           <div style={styles.rightColumn}>
+            {/* Hiring Timeline */}
             <div style={styles.panel}>
               <div style={styles.panelHeader}>
                 <div>
@@ -274,6 +366,7 @@ function CandidateDashboard() {
               </div>
             </div>
 
+            {/* Interview Highlight */}
             <div style={styles.panel}>
               <div style={styles.panelHeader}>
                 <div>
@@ -282,17 +375,49 @@ function CandidateDashboard() {
                 </div>
               </div>
 
-              <div style={styles.interviewCard}>
-                <p style={styles.interviewRole}>Backend Developer</p>
-                <h4 style={styles.interviewHeading}>Technical Interview</h4>
-                <p style={styles.interviewDetail}>25 Apr 2026 • 11:00 AM</p>
-                <p style={styles.interviewDetail}>Mode: Google Meet</p>
-                <Link to="/application-status" style={styles.primaryButtonFull}>
-                  Open Status Page
-                </Link>
-              </div>
+              {upcomingInterview ? (
+                <div style={styles.interviewCard}>
+                  <p style={styles.interviewRole}>
+                    {upcomingInterview.jobTitle}
+                  </p>
+                  <h4 style={styles.interviewHeading}>Scheduled Interview</h4>
+                  <p style={styles.interviewDetail}>
+                    {formatDateTime(upcomingInterview.interview_date)}
+                  </p>
+                  <p style={styles.interviewDetail}>
+                    Mode:{" "}
+                    {upcomingInterview.mode
+                      ? upcomingInterview.mode.charAt(0).toUpperCase() +
+                        upcomingInterview.mode.slice(1)
+                      : "—"}
+                  </p>
+                  <Link
+                    to="/application-status"
+                    style={styles.primaryButtonFull}
+                  >
+                    Open Status Page
+                  </Link>
+                </div>
+              ) : (
+                <div style={styles.interviewCard}>
+                  <p style={styles.interviewRole}>
+                    No interviews scheduled yet
+                  </p>
+                  <h4 style={styles.interviewHeading}>Stay tuned</h4>
+                  <p style={styles.interviewDetail}>
+                    Interview details will appear here once you are shortlisted.
+                  </p>
+                  <Link
+                    to="/application-status"
+                    style={styles.primaryButtonFull}
+                  >
+                    Open Status Page
+                  </Link>
+                </div>
+              )}
             </div>
 
+            {/* Quick Actions */}
             <div style={styles.panel}>
               <div style={styles.panelHeader}>
                 <div>
@@ -320,6 +445,8 @@ function CandidateDashboard() {
   );
 }
 
+// ── Helper components ──────────────────────────────────────────────────────────
+
 function InfoRow({ label, value }) {
   return (
     <div style={styles.infoRow}>
@@ -329,15 +456,90 @@ function InfoRow({ label, value }) {
   );
 }
 
-function getStatusStyle(status) {
-  if (status === "Shortlisted") {
-    return { bg: "#dcfce7", text: "#166534" };
-  }
-  if (status === "Interview Scheduled") {
-    return { bg: "#ede9fe", text: "#5b21b6" };
-  }
-  return { bg: "#dbeafe", text: "#1d4ed8" };
+// ── Helper functions ───────────────────────────────────────────────────────────
+
+function formatStatus(status) {
+  const map = {
+    applied: "Under Review",
+    shortlisted: "Shortlisted",
+    interview: "Interview Scheduled",
+    offered: "Offer Received",
+    rejected: "Not Selected",
+  };
+  return map[status] || status;
 }
+
+function getStatusStyle(status) {
+  if (status === "shortlisted") return { bg: "#dcfce7", text: "#166534" };
+  if (status === "interview") return { bg: "#ede9fe", text: "#5b21b6" };
+  if (status === "offered") return { bg: "#fef9c3", text: "#854d0e" };
+  if (status === "rejected") return { bg: "#fee2e2", text: "#991b1b" };
+  return { bg: "#dbeafe", text: "#1d4ed8" }; // applied / default
+}
+
+function getProgress(status) {
+  switch (status) {
+    case "applied":
+      return 25;
+    case "shortlisted":
+      return 60;
+    case "interview":
+      return 85;
+    case "offered":
+      return 100;
+    case "rejected":
+      return 100;
+    default:
+      return 25;
+  }
+}
+
+// Returns the furthest-along status across all applications for the timeline
+function getFurthestStatus(applications) {
+  const order = ["applied", "shortlisted", "interview", "offered"];
+  let best = null;
+  for (const app of applications) {
+    const idx = order.indexOf(app.status);
+    if (idx > order.indexOf(best)) best = app.status;
+  }
+  return best || "applied";
+}
+
+function getStatusUpdateText(status) {
+  const map = {
+    applied: "Your application is under initial review by the hiring team.",
+    shortlisted:
+      "Congratulations — you have been shortlisted for the next stage.",
+    interview:
+      "An interview has been scheduled. Check the Interview Highlight panel.",
+    offered: "Great news — you have received a job offer!",
+    rejected:
+      "Thank you for applying. The team has moved forward with other candidates.",
+  };
+  return map[status] || "Status updated.";
+}
+
+function formatDate(isoString) {
+  if (!isoString) return "—";
+  return new Date(isoString).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatDateTime(isoString) {
+  if (!isoString) return "—";
+  return new Date(isoString).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// ── Styles (identical to original) ────────────────────────────────────────────
 
 const styles = {
   page: {
@@ -772,6 +974,20 @@ const styles = {
     padding: "15px 16px",
     fontWeight: "700",
     textAlign: "center",
+  },
+  emptyState: {
+    padding: "24px",
+    textAlign: "center",
+  },
+  emptyTitle: {
+    margin: 0,
+    fontSize: "22px",
+    color: "#0f172a",
+  },
+  emptyText: {
+    margin: "10px 0 20px",
+    color: "#64748b",
+    lineHeight: 1.7,
   },
   infoRow: {
     display: "flex",

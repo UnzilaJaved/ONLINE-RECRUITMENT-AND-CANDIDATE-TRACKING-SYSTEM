@@ -45,7 +45,7 @@ function Apply() {
     }));
   };
 
-  // 🔥 Submit application to backend
+  // Submit application to backend
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -56,22 +56,33 @@ function Apply() {
       return;
     }
 
+    const form = new FormData();
+
+    form.append("userId", user.id);
+    form.append("jobId", id);
+
+    form.append("phone", formData.phone);
+    form.append("education", formData.education);
+
+    form.append("city", formData.city);
+    form.append("experience", formData.experience);
+    form.append("skills", formData.skills);
+    form.append("coverLetter", formData.coverLetter);
+
+    if (formData.resume) {
+      form.append("resume", formData.resume);
+    }
+
     const res = await fetch("/api/applications", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: user.id,
-        jobId: id,
-        ...formData,
-      }),
+      body: form,
     });
 
     if (res.ok) {
       navigate("/application-success");
     } else {
-      alert("Error submitting application");
+      const err = await res.json();
+      alert(err.error || "Error submitting application");
     }
   };
 
@@ -88,18 +99,22 @@ function Apply() {
             <p style={styles.logoSub}>Candidate Dashboard</p>
           </div>
         </div>
-            
+
         <div style={styles.navLinks}>
           <Link to="/candidate-dashboard" style={styles.navLink}>
             Dashboard
           </Link>
           <Link to="/jobs" style={styles.navLink}>
-             Jobs
+            Jobs
           </Link>
           <Link to="/application-status" style={styles.activeNavLink}>
             Status
           </Link>
-          <button type="button" onClick={handleLogout} style={styles.logoutButton}>
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={styles.logoutButton}
+          >
             Logout
           </button>
         </div>
@@ -134,54 +149,139 @@ function Apply() {
               <form onSubmit={handleSubmit} style={styles.form}>
                 <div style={styles.formGrid}>
                   <div style={styles.fieldWrap}>
-                    <label style={styles.label} htmlFor="fullName">Full Name</label>
-                    <input id="fullName" name="fullName" onChange={handleChange} placeholder="Enter your full name" style={styles.input} required />
+                    <label style={styles.label} htmlFor="fullName">
+                      Full Name
+                    </label>
+                    <input
+                      id="fullName"
+                      name="fullName"
+                      onChange={handleChange}
+                      placeholder="Enter your full name"
+                      style={styles.input}
+                      required
+                    />
                   </div>
 
                   <div style={styles.fieldWrap}>
-                    <label style={styles.label} htmlFor="email">Email</label>
-                    <input id="email" name="email" type="email" onChange={handleChange} placeholder="you@example.com" style={styles.input} required />
+                    <label style={styles.label} htmlFor="email">
+                      Email
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      onChange={handleChange}
+                      placeholder="you@example.com"
+                      style={styles.input}
+                      required
+                    />
                   </div>
 
                   <div style={styles.fieldWrap}>
-                    <label style={styles.label} htmlFor="phone">Phone</label>
-                    <input id="phone" name="phone" onChange={handleChange} placeholder="+92 300 0000000" style={styles.input} required />
+                    <label style={styles.label} htmlFor="phone">
+                      Phone
+                    </label>
+                    <input
+                      id="phone"
+                      name="phone"
+                      onChange={handleChange}
+                      placeholder="+92 300 0000000"
+                      style={styles.input}
+                      required
+                    />
                   </div>
 
                   <div style={styles.fieldWrap}>
-                    <label style={styles.label} htmlFor="city">City</label>
-                    <input id="city" name="city" onChange={handleChange} placeholder="Lahore" style={styles.input} required />
+                    <label style={styles.label} htmlFor="city">
+                      City
+                    </label>
+                    <input
+                      id="city"
+                      name="city"
+                      onChange={handleChange}
+                      placeholder="Lahore"
+                      style={styles.input}
+                      required
+                    />
                   </div>
 
                   <div style={styles.fieldWrap}>
-                    <label style={styles.label} htmlFor="education">Education</label>
-                    <input id="education" name="education" onChange={handleChange} placeholder="BS Computer Science" style={styles.input} required />
+                    <label style={styles.label} htmlFor="education">
+                      Education
+                    </label>
+                    <input
+                      id="education"
+                      name="education"
+                      onChange={handleChange}
+                      placeholder="BS Computer Science"
+                      style={styles.input}
+                      required
+                    />
                   </div>
 
                   <div style={styles.fieldWrap}>
-                    <label style={styles.label} htmlFor="experience">Experience</label>
-                    <input id="experience" name="experience" onChange={handleChange} placeholder="2 years" style={styles.input} required />
+                    <label style={styles.label} htmlFor="experience">
+                      Experience
+                    </label>
+                    <input
+                      id="experience"
+                      name="experience"
+                      onChange={handleChange}
+                      placeholder="2 years"
+                      style={styles.input}
+                      required
+                    />
                   </div>
                 </div>
 
                 <div style={styles.fullWidthField}>
-                  <label style={styles.label} htmlFor="skills">Skills</label>
-                  <input id="skills" name="skills" onChange={handleChange} placeholder="React, Node.js, PostgreSQL" style={styles.input} required />
+                  <label style={styles.label} htmlFor="skills">
+                    Skills
+                  </label>
+                  <input
+                    id="skills"
+                    name="skills"
+                    onChange={handleChange}
+                    placeholder="React, Node.js, PostgreSQL"
+                    style={styles.input}
+                    required
+                  />
                 </div>
 
                 <div style={styles.fullWidthField}>
-                  <label style={styles.label} htmlFor="coverLetter">Cover Letter</label>
-                  <textarea id="coverLetter" name="coverLetter" onChange={handleChange} placeholder="Tell us why you are a good fit for this role" style={styles.textarea} required />
+                  <label style={styles.label} htmlFor="coverLetter">
+                    Cover Letter
+                  </label>
+                  <textarea
+                    id="coverLetter"
+                    name="coverLetter"
+                    onChange={handleChange}
+                    placeholder="Tell us why you are a good fit for this role"
+                    style={styles.textarea}
+                    required
+                  />
                 </div>
 
                 <div style={styles.fullWidthField}>
-                  <label style={styles.label} htmlFor="resume">Resume</label>
-                  <input id="resume" type="file" name="resume" onChange={handleChange} style={styles.fileInput} />
+                  <label style={styles.label} htmlFor="resume">
+                    Resume
+                  </label>
+                  <input
+                    id="resume"
+                    type="file"
+                    name="resume"
+                    onChange={handleChange}
+                    style={styles.fileInput}
+                  />
                 </div>
 
                 <div style={styles.actionRow}>
-                  <Link to={`/jobs/${job.id}`} style={styles.cancelButton}>Cancel</Link>
-                  <button type="submit" style={styles.submitButton}>Submit Application</button>
+                  <Link to={`/jobs/${job.id}`} style={styles.cancelButton}>
+                    Cancel
+                  </Link>
+                  <button type="submit" style={styles.submitButton}>
+                    Submit Application
+                  </button>
                 </div>
               </form>
             </div>
@@ -189,7 +289,9 @@ function Apply() {
 
           <div style={styles.rightColumn}>
             <div style={{ ...styles.summaryCard, ...styles.roleSummaryCard }}>
-              <p style={{ ...styles.cardMini, ...styles.roleSummaryMini }}>Role Summary</p>
+              <p style={{ ...styles.cardMini, ...styles.roleSummaryMini }}>
+                Role Summary
+              </p>
               <h3 style={styles.cardTitle}>{job.title}</h3>
 
               <div style={styles.infoList}>
@@ -203,18 +305,30 @@ function Apply() {
                 </div>
                 <div style={styles.infoRow}>
                   <span style={styles.infoLabel}>Department</span>
-                  <span style={styles.infoValue}>{job.department || "General"}</span>
+                  <span style={styles.infoValue}>
+                    {job.department || "General"}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div style={{ ...styles.summaryCard, ...styles.tipsSummaryCard }}>
-              <p style={{ ...styles.cardMini, ...styles.tipsSummaryMini }}>Tips</p>
+              <p style={{ ...styles.cardMini, ...styles.tipsSummaryMini }}>
+                Tips
+              </p>
               <h3 style={styles.cardTitle}>Before You Submit</h3>
               <div style={styles.tipList}>
-                <div style={{ ...styles.tipItem, ...styles.tipItemOne }}>Keep your cover letter role-specific and concise.</div>
-                <div style={{ ...styles.tipItem, ...styles.tipItemTwo }}>Highlight measurable achievements in your skills and experience.</div>
-                <div style={{ ...styles.tipItem, ...styles.tipItemThree }}>Double-check contact details so recruiters can reach you quickly.</div>
+                <div style={{ ...styles.tipItem, ...styles.tipItemOne }}>
+                  Keep your cover letter role-specific and concise.
+                </div>
+                <div style={{ ...styles.tipItem, ...styles.tipItemTwo }}>
+                  Highlight measurable achievements in your skills and
+                  experience.
+                </div>
+                <div style={{ ...styles.tipItem, ...styles.tipItemThree }}>
+                  Double-check contact details so recruiters can reach you
+                  quickly.
+                </div>
               </div>
             </div>
           </div>
