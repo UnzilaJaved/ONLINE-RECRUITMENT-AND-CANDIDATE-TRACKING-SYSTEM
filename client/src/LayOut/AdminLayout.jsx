@@ -51,6 +51,11 @@ function AdminLayout() {
             style={styles.navItem}>
               Reports
             </Link>
+            <Link to="/admin/signup" 
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
+            style={styles.navItem}>
+              Admin Registration
+            </Link>
             <Link to="/admin-login" 
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
             style={styles.Logout}>

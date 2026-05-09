@@ -15,8 +15,9 @@ const CandidateDashboard = lazy(() => import("./Pages/Candidate/CandidateDashboa
 const ApplicationStatus = lazy(() => import("./Pages/Candidate/ApplicationStatus"));
 
 // HR Pages
+const AdminSignup = lazy(() => import("./Pages/Admin/Signup/AdminSignup"));
 const AdminLogin = lazy(() => import("./Pages/Admin/AdminLogin"));
-const AdminDashboard = lazy(() => import("./Pages/Admin/AdminDashboard"));
+const AdminDashboard = lazy(() => import("./Pages/Admin/Dashboard/AdminDashboard"));
 const ManageJobs = lazy(() => import("./Pages/Admin/ManageJobs"));
 const Applications = lazy(() => import("./Pages/Admin/Applications"));
 const CandidateDetails = lazy(() => import("./Pages/Admin/CandidateDetails"));
@@ -71,6 +72,7 @@ function AppRoutes() {
 
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/signup" element={<AdminSignup />} />
           <Route path="/admin/jobs" element={<ManageJobs />} />
           <Route path="/admin/applications" element={<Applications />} />
           <Route path="/admin/candidate-details" element={<CandidateDetails />} />

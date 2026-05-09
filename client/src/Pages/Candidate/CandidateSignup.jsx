@@ -63,15 +63,7 @@ function CandidateSignup() {
           <Link to="/" style={styles.navLink}>
             Home
           </Link>
-          <Link to="/jobs" style={styles.navLink}>
-            Jobs
-          </Link>
-          <Link to="/candidate-login" style={styles.navLink}>
-            Login
-          </Link>
-          <Link to="/candidate-signup" style={styles.activeNavLink}>
-            Signup
-          </Link>
+
         </div>
       </nav>
 

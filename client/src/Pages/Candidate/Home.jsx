@@ -70,7 +70,7 @@ function Home() {
           </p>
 
           <div style={styles.heroButtons}>
-            <Link to="/jobs" style={styles.primaryButton}>Explore Jobs</Link>
+            <Link to="/candidate-login" style={styles.primaryButton}>Explore Jobs</Link>
             <Link to="/candidate-login" style={styles.secondaryButton}>
               Track Application
             </Link>
@@ -127,10 +127,10 @@ function Home() {
               <p style={styles.jobMeta}>💼 {job.type}</p>
 
               <div style={styles.jobActions}>
-                <Link to={`/jobs/${job.id}`} style={styles.jobViewButton}>
+                <Link to="/candidate-login" style={styles.jobViewButton}>
                   View Details
                 </Link>
-                <Link to={`/apply/${job.id}`} style={styles.jobApplyButton}>
+                <Link to="/candidate-login" style={styles.jobApplyButton}>
                   Apply Now
                 </Link>
               </div>
@@ -139,7 +139,7 @@ function Home() {
         </div>
 
         <div style={styles.centerButtonWrap}>
-          <Link to="/jobs" style={styles.primaryButton}>See All Jobs</Link>
+          <Link to="/candidate-login" style={styles.primaryButton}>See All Jobs</Link>
         </div>
       </section>
     </div>

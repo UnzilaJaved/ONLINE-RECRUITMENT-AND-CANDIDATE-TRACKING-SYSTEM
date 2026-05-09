@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 function ApplicationStatus() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const handleLogout = () => {
@@ -20,20 +21,28 @@ function ApplicationStatus() {
       return;
     }
 
-    fetch(`/api/candidate/dashboard/${user.id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const appList = Array.isArray(data) ? data : data.applications || [];
+    Promise.all([
+      fetch(`/api/candidate/dashboard/${user.id}`).then((res) => res.json()),
+      fetch(`/api/candidate/profile/${user.id}`).then((res) => res.json()),
+    ])
+      .then(([applicationsData, profileData]) => {
+        const appList = Array.isArray(applicationsData)
+          ? applicationsData
+          : applicationsData.applications || [];
+
         setApplications(appList);
+        setProfile(profileData);
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
   }, [navigate]);
 
   const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-  const candidateName = storedUser?.email
+  const candidateName =
+  profile?.full_name ||
+  (storedUser?.email
     ? storedUser.email.split("@")[0]
-    : "Candidate";
+    : "Candidate");
 
   const stats = [
     {
@@ -93,7 +102,6 @@ function ApplicationStatus() {
 
             <div style={styles.heroButtons}>
               <Link to="/jobs" style={styles.primaryButton}>Apply to More Jobs</Link>
-              <Link to="/candidate-dashboard" style={styles.secondaryButton}>Open Dashboard</Link>
             </div>
           </div>
 
@@ -154,7 +162,7 @@ function ApplicationStatus() {
                       </p>
                     </div>
 
-                    <span
+                    {/*<span
                       style={{
                         ...styles.statusBadge,
                         background: getStatusStyle(app.status).bg,
@@ -162,7 +170,7 @@ function ApplicationStatus() {
                       }}
                     >
                       {formatStatus(app.status)}
-                    </span>
+                    </span>*/}
                   </div>
 
                   <div style={styles.appMetaRow}>

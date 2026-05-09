@@ -7,21 +7,55 @@ function AdminLogin() {
     email: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // For now, just redirect to dashboard on any login attempt
-    // In a real app, you'd validate credentials here
-    navigate("/admin/dashboard");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Login failed");
+        setLoading(false);
+        return;
+      }
+
+      // Only allow hr role — candidates must use Candidate login
+      if (data.role !== "hr") {
+        alert("Access denied. Please use the Candidate login page.");
+        setLoading(false);
+        return;
+      }
+
+      // Store session (same pattern as CandidateLogin)
+      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("role", data.role);
+
+      window.location.href = "/admin/dashboard";
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
   return (
     <div style={styles.page}>
       <nav style={styles.navbar}>
@@ -34,15 +68,9 @@ function AdminLogin() {
         </div>
 
         <div style={styles.navLinks}>
-          <Link to="/" style={styles.navLink}>
-            Home
-          </Link>
-          <Link to="/jobs" style={styles.navLink}>
-            Jobs
-          </Link>
-          <Link to="/candidate-login" style={styles.activeNavLink}>
-            Login
-          </Link>
+          <Link to="/" style={styles.navLink}>Home</Link>
+          <Link to="/jobs" style={styles.navLink}>Jobs</Link>
+          <Link to="/candidate-login" style={styles.navLink}>Candidate</Link>
         </div>
       </nav>
 
@@ -54,9 +82,7 @@ function AdminLogin() {
           </p>
 
           <form style={styles.form} onSubmit={handleSubmit}>
-            <label style={styles.label} htmlFor="email">
-              Email address
-            </label>
+            <label style={styles.label} htmlFor="email">Email address</label>
             <input
               id="email"
               name="email"
@@ -68,9 +94,7 @@ function AdminLogin() {
               required
             />
 
-            <label style={styles.label} htmlFor="password">
-              Password
-            </label>
+            <label style={styles.label} htmlFor="password">Password</label>
             <input
               id="password"
               name="password"
@@ -82,18 +106,15 @@ function AdminLogin() {
               required
             />
 
-            <button type="submit" style={styles.submitButton}>
-              Sign In
+            <button type="submit" style={styles.submitButton} disabled={loading}>
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
-{/*}
+
           <p style={styles.footerText}>
-            Don't have an account? <Link to="/candidate-signup" style={styles.link}>Create one</Link>
+            New admin?{" "}
+            <Link to="/admin-signup" style={styles.link}>Create an account</Link>
           </p>
-          <p style={styles.footerText}>
-            Sign in as <Link to="/admin/dashboard" style={styles.link}>Admin</Link>
-          </p>
-            */}
         </div>
       </div>
     </div>
@@ -103,9 +124,9 @@ function AdminLogin() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#f4f7fb",
     fontFamily: "Arial, sans-serif",
     color: "#0f172a",
+    background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
   },
   navbar: {
     display: "flex",
@@ -158,14 +179,6 @@ const styles = {
     fontWeight: "600",
     padding: "10px 14px",
   },
-  activeNavLink: {
-    textDecoration: "none",
-    color: "#1d4ed8",
-    background: "#eff6ff",
-    fontWeight: "700",
-    padding: "10px 14px",
-    borderRadius: "12px",
-  },
   container: {
     minHeight: "100vh",
     boxSizing: "border-box",
@@ -215,7 +228,7 @@ const styles = {
   submitButton: {
     width: "100%",
     boxSizing: "border-box",
-    background: "#2563eb",
+    background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
     color: "#ffffff",
     border: "none",
     borderRadius: "16px",

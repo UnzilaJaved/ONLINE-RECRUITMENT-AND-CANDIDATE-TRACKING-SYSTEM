@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js'
 import jobsRoutes from './routes/jobs.js'
 import applicationRoutes from './routes/application.js'
 import candidateRoutes from './routes/candidate.js'
+import adminRouter from './routes/admin.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/jobs', jobsRoutes)
 app.use('/api/applications', applicationRoutes)
 app.use('/api/candidate', candidateRoutes)
+app.use('/api/admin', adminRouter)
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }))

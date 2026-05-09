@@ -163,7 +163,7 @@ function CandidateDashboard() {
                 View Full Status
               </Link>
               <Link to="/jobs" style={styles.secondaryButton}>
-                Explore More Jobs
+                Explore Jobs
               </Link>
             </div>
           </div>
@@ -432,9 +432,6 @@ function CandidateDashboard() {
                 </Link>
                 <Link to="/jobs" style={styles.actionButton}>
                   Browse Jobs
-                </Link>
-                <Link to="/" style={styles.actionButton}>
-                  Back to Home
                 </Link>
               </div>
             </div>
