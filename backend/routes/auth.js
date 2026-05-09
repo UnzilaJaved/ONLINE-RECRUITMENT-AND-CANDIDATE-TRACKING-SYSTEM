@@ -70,6 +70,48 @@ router.post('/signup', async (req, res) => {
   })
 })
 
+// ─── POST /api/auth/admin-signup  (hr) ───────────────────────────────────────
+// Used by AdminSignup.jsx — creates a user with role: 'hr'.
+// No candidates row is created for HR accounts.
+router.post('/admin-signup', async (req, res) => {
+  const { email, password, firstName, lastName } = req.body
+
+  if (!email || !password || !firstName || !lastName) {
+    return res.status(400).json({ error: 'All fields are required' })
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' })
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { first_name: firstName, last_name: lastName, role: 'hr' }
+    }
+  })
+
+  if (error) return res.status(400).json({ error: error.message })
+  if (!data?.user?.id) return res.status(400).json({ error: 'Unable to create admin account' })
+
+  const userId = data.user.id
+
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .upsert(
+      { id: userId, role: 'hr', email, full_name: `${firstName} ${lastName}` },
+      { onConflict: 'id' }
+    )
+
+  if (profileError) return res.status(400).json({ error: profileError.message })
+
+  res.status(201).json({
+    message: 'Admin account created successfully. Please confirm the email before logging in.',
+    user: data.user
+  })
+})
+
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   const { email, password } = req.body
@@ -154,63 +196,6 @@ router.post('/reset-password', async (req, res) => {
   if (error) return res.status(400).json({ error: error.message })
 
   res.json({ message: 'Password updated successfully. You can now log in.' })
-})
-
-router.post('/admin-signup', async (req, res) => {
-  const { email, password, firstName, lastName } = req.body
- 
-  if (!email || !password || !firstName || !lastName) {
-    return res.status(400).json({ error: 'All fields are required' })
-  }
- 
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' })
-  }
- 
-  // 1) Create the Supabase Auth user
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        first_name: firstName,
-        last_name: lastName,
-        role: 'hr'
-      }
-    }
-  })
- 
-  if (error) return res.status(400).json({ error: error.message })
- 
-  if (!data?.user?.id) {
-    return res.status(400).json({ error: 'Unable to create admin account' })
-  }
- 
-  const userId = data.user.id
- 
-  // 2) Upsert profile with role = 'hr'
-  //    (safe if a DB trigger already inserted the row)
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .upsert(
-      {
-        id: userId,
-        role: 'hr',
-        email,
-        full_name: `${firstName} ${lastName}`
-      },
-      { onConflict: 'id' }
-    )
- 
-  if (profileError) {
-    return res.status(400).json({ error: profileError.message })
-  }
- 
-  // NOTE: No candidates row needed for HR accounts.
- 
-  res.status(201).json({
-    message: 'Admin account created successfully. The new admin can now log in.'
-  })
 })
 
 export default router

@@ -1,83 +1,147 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+
+const EMPTY_FORM = {
+  title: "",
+  description: "",
+  department: "",
+  location: "",
+  type: "Full Time",
+  salary: "",
+  experience: "",
+  status: "open",
+};
 
 function ManageJobs() {
+  const [jobs, setJobs] = useState([]);
+  const [stats, setStats] = useState({ total: 0, active: 0, closed: 0 });
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
-  const jobs = [
-    {
-      id: 1,
-      title: "Frontend Developer",
-      department: "Engineering",
-      location: "Karachi",
-      type: "Full Time",
-      applicants: 34,
-      status: "Active",
-      postedDate: "18 Apr 2026",
-      salary: "PKR 120,000 - 160,000",
-    },
-    {
-      id: 2,
-      title: "Backend Developer",
-      department: "Engineering",
-      location: "Lahore",
-      type: "Full Time",
-      applicants: 27,
-      status: "Active",
-      postedDate: "16 Apr 2026",
-      salary: "PKR 140,000 - 190,000",
-    },
-    {
-      id: 3,
-      title: "UI/UX Designer",
-      department: "Design",
-      location: "Islamabad",
-      type: "Remote",
-      applicants: 19,
-      status: "Draft",
-      postedDate: "14 Apr 2026",
-      salary: "PKR 100,000 - 135,000",
-    },
-    {
-      id: 4,
-      title: "HR Associate",
-      department: "Human Resources",
-      location: "Karachi",
-      type: "Part Time",
-      applicants: 11,
-      status: "Closed",
-      postedDate: "12 Apr 2026",
-      salary: "PKR 70,000 - 95,000",
-    },
-    {
-      id: 5,
-      title: "QA Engineer",
-      department: "Quality Assurance",
-      location: "Remote",
-      type: "Full Time",
-      applicants: 21,
-      status: "Active",
-      postedDate: "10 Apr 2026",
-      salary: "PKR 110,000 - 150,000",
-    },
-    {
-      id: 6,
-      title: "Project Coordinator",
-      department: "Operations",
-      location: "Karachi",
-      type: "Full Time",
-      applicants: 15,
-      status: "Draft",
-      postedDate: "08 Apr 2026",
-      salary: "PKR 90,000 - 120,000",
-    },
-  ];
+  // Create / edit modal
+  const [modal, setModal] = useState(null); // null | "create" | "edit"
+  const [editingJob, setEditingJob] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
 
-  const filteredJobs = jobs.filter(
-    (job) =>
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ── Fetch ───────────────────────────────────────────────────────────────
+  const fetchJobs = () => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (statusFilter !== "All") params.set("status", statusFilter);
+
+    fetch(`/api/admin/jobs?${params}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setJobs(data.jobs || []);
+        if (data.stats) setStats(data.stats);
+      })
+      .catch((err) => console.error("Jobs fetch error:", err))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, [statusFilter]);
+
+  const filtered = useMemo(() => {
+    if (!searchTerm) return jobs;
+    const q = searchTerm.toLowerCase();
+    return jobs.filter(
+      (j) =>
+        j.title?.toLowerCase().includes(q) ||
+        j.department?.toLowerCase().includes(q) ||
+        j.location?.toLowerCase().includes(q),
+    );
+  }, [jobs, searchTerm]);
+
+  // ── CRUD ─────────────────────────────────────────────────────────────────
+  const openCreate = () => {
+    setForm(EMPTY_FORM);
+    setEditingJob(null);
+    setModal("create");
+  };
+  const openEdit = (job) => {
+    setForm({
+      title: job.title,
+      description: job.description || "",
+      department: job.department || "",
+      location: job.location || "",
+      type: job.type || "Full Time",
+      salary: job.salary || "",
+      experience: job.experience || "",
+      status: job.status,
+    });
+    setEditingJob(job);
+    setModal("edit");
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim()) {
+      alert("Job title is required");
+      return;
+    }
+    setSaving(true);
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      const isEdit = modal === "edit";
+      const url = isEdit
+        ? `/api/admin/jobs/${editingJob.id}`
+        : "/api/admin/jobs";
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, createdBy: storedUser?.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Save failed");
+        return;
+      }
+
+      setModal(null);
+      fetchJobs();
+    } catch (err) {
+      console.error("Save job error:", err);
+      alert("Something went wrong.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (job) => {
+    if (!window.confirm(`Delete "${job.title}"? This cannot be undone.`))
+      return;
+    try {
+      const res = await fetch(`/api/admin/jobs/${job.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Delete failed");
+        return;
+      }
+      fetchJobs();
+    } catch (err) {
+      console.error("Delete job error:", err);
+    }
+  };
+
+  function formatDate(iso) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  function getStatusColor(s) {
+    if (s === "open") return { bg: "#dcfce7", text: "#166534" };
+    return { bg: "#fee2e2", text: "#991b1b" };
+  }
 
   return (
     <div style={styles.page}>
@@ -90,36 +154,49 @@ function ManageJobs() {
             premium hiring workspace.
           </p>
         </div>
-
         <div style={styles.topActions}>
-          <button style={styles.secondaryTopButton}>Import Jobs</button>
-          <button style={styles.primaryTopButton}>+ Create New Job</button>
+          <button style={styles.secondaryTopButton} onClick={fetchJobs}>
+            Refresh
+          </button>
+          <button style={styles.primaryTopButton} onClick={openCreate}>
+            + Create New Job
+          </button>
         </div>
       </div>
 
+      {/* Stats */}
       <div style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <p style={styles.statLabel}>Total Jobs</p>
-          <h2 style={styles.statValue}>24</h2>
-          <p style={styles.statNote}>All created openings</p>
-        </div>
-        <div style={styles.statCard}>
-          <p style={styles.statLabel}>Active Jobs</p>
-          <h2 style={styles.statValue}>16</h2>
-          <p style={styles.statNote}>Currently accepting applications</p>
-        </div>
-        <div style={styles.statCard}>
-          <p style={styles.statLabel}>Draft Jobs</p>
-          <h2 style={styles.statValue}>5</h2>
-          <p style={styles.statNote}>Pending publishing</p>
-        </div>
-        <div style={styles.statCard}>
-          <p style={styles.statLabel}>Closed Jobs</p>
-          <h2 style={styles.statValue}>3</h2>
-          <p style={styles.statNote}>Hiring cycle completed</p>
-        </div>
+        {[
+          {
+            label: "Total Jobs",
+            value: stats.total,
+            note: "All created openings",
+          },
+          {
+            label: "Active Jobs",
+            value: stats.active,
+            note: "Currently accepting",
+          },
+          {
+            label: "Closed Jobs",
+            value: stats.closed,
+            note: "Hiring cycle completed",
+          },
+          {
+            label: "Total Applicants",
+            value: jobs.reduce((sum, j) => sum + (j.applicants || 0), 0),
+            note: "Across all jobs",
+          },
+        ].map((s, i) => (
+          <div key={i} style={styles.statCard}>
+            <p style={styles.statLabel}>{s.label}</p>
+            <h2 style={styles.statValue}>{loading ? "…" : s.value}</h2>
+            <p style={styles.statNote}>{s.note}</p>
+          </div>
+        ))}
       </div>
 
+      {/* Toolbar */}
       <div style={styles.toolbar}>
         <div style={styles.searchWrap}>
           <input
@@ -130,75 +207,214 @@ function ManageJobs() {
             style={styles.searchInput}
           />
         </div>
-
         <div style={styles.filterWrap}>
-          <button style={styles.filterButton}>All Status</button>
-          <button style={styles.filterButton}>All Departments</button>
-          <button style={styles.filterButton}>Newest First</button>
+          {["All", "open", "closed"].map((opt) => (
+            <button
+              key={opt}
+              onClick={() => setStatusFilter(opt)}
+              style={
+                statusFilter === opt
+                  ? styles.filterButtonActive
+                  : styles.filterButton
+              }
+            >
+              {opt === "All"
+                ? "All Status"
+                : opt === "open"
+                  ? "Active"
+                  : "Closed"}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div style={styles.cardGrid}>
-        {filteredJobs.map((job) => (
-          <div key={job.id} style={styles.jobCard}>
-            <div style={styles.cardHeader}>
-              <div>
-                <p style={styles.jobDept}>{job.department}</p>
-                <h3 style={styles.jobTitle}>{job.title}</h3>
+      {/* Job Cards */}
+      {loading ? (
+        <p style={styles.emptyMsg}>Loading jobs…</p>
+      ) : filtered.length === 0 ? (
+        <p style={styles.emptyMsg}>No jobs found.</p>
+      ) : (
+        <div style={styles.cardGrid}>
+          {filtered.map((job) => (
+            <div key={job.id} style={styles.jobCard}>
+              <div style={styles.cardHeader}>
+                <div>
+                  <p style={styles.jobDept}>{job.department}</p>
+                  <h3 style={styles.jobTitle}>{job.title}</h3>
+                </div>
+                <span
+                  style={{
+                    ...styles.statusBadge,
+                    backgroundColor: getStatusColor(job.status).bg,
+                    color: getStatusColor(job.status).text,
+                  }}
+                >
+                  {job.status === "open" ? "Active" : "Closed"}
+                </span>
               </div>
 
-              <span
-                style={{
-                  ...styles.statusBadge,
-                  backgroundColor: getStatusColor(job.status).bg,
-                  color: getStatusColor(job.status).text,
-                }}
+              <div style={styles.metaRow}>
+                <span style={styles.metaChip}>📍 {job.location}</span>
+                <span style={styles.metaChip}>💼 {job.type}</span>
+                <span style={styles.metaChip}>
+                  👥 {job.applicants} Applicants
+                </span>
+              </div>
+
+              <div style={styles.infoBox}>
+                <InfoRow
+                  label="Posted Date"
+                  value={formatDate(job.createdAt)}
+                />
+                <InfoRow label="Salary Range" value={job.salary || "—"} />
+                <InfoRow label="Experience" value={job.experience || "—"} />
+              </div>
+
+              <div style={styles.actionRow}>
+                <button
+                  style={styles.viewButton}
+                  onClick={() =>
+                    alert(
+                      `${job.title}\n\n${job.description || "No description."}`,
+                    )
+                  }
+                >
+                  View
+                </button>
+                <button style={styles.editButton} onClick={() => openEdit(job)}>
+                  Edit
+                </button>
+                <button
+                  style={styles.deleteButton}
+                  onClick={() => handleDelete(job)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create / Edit Modal */}
+      {modal && (
+        <div style={styles.overlay}>
+          <div style={styles.modal}>
+            <h3 style={styles.modalTitle}>
+              {modal === "create" ? "Create New Job" : "Edit Job"}
+            </h3>
+            <div style={styles.formGrid}>
+              <FormField
+                label="Job Title *"
+                value={form.title}
+                onChange={(v) => setForm({ ...form, title: v })}
+              />
+              <FormField
+                label="Department"
+                value={form.department}
+                onChange={(v) => setForm({ ...form, department: v })}
+              />
+              <FormField
+                label="Location"
+                value={form.location}
+                onChange={(v) => setForm({ ...form, location: v })}
+              />
+              <FormField
+                label="Salary Range"
+                value={form.salary}
+                onChange={(v) => setForm({ ...form, salary: v })}
+              />
+              <FormField
+                label="Experience"
+                value={form.experience}
+                onChange={(v) => setForm({ ...form, experience: v })}
+              />
+              <div style={styles.fieldWrap}>
+                <label style={styles.fieldLabel}>Type</label>
+                <select
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  style={styles.input}
+                >
+                  {["Full Time", "Part Time", "Remote", "Contract"].map((o) => (
+                    <option key={o}>{o}</option>
+                  ))}
+                </select>
+              </div>
+              {modal === "edit" && (
+                <div style={styles.fieldWrap}>
+                  <label style={styles.fieldLabel}>Status</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) =>
+                      setForm({ ...form, status: e.target.value })
+                    }
+                    style={styles.input}
+                  >
+                    <option value="open">Active</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            <div style={{ ...styles.fieldWrap, marginTop: "4px" }}>
+              <label style={styles.fieldLabel}>Description</label>
+              <textarea
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+                style={styles.textarea}
+                placeholder="Describe the role and responsibilities…"
+              />
+            </div>
+            <div style={styles.modalActions}>
+              <button
+                style={styles.cancelButton}
+                onClick={() => setModal(null)}
               >
-                {job.status}
-              </span>
-            </div>
-
-            <div style={styles.metaRow}>
-              <span style={styles.metaChip}>📍 {job.location}</span>
-              <span style={styles.metaChip}>💼 {job.type}</span>
-              <span style={styles.metaChip}>👥 {job.applicants} Applicants</span>
-            </div>
-
-            <div style={styles.infoBox}>
-              <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Posted Date</span>
-                <span style={styles.infoValue}>{job.postedDate}</span>
-              </div>
-              <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Salary Range</span>
-                <span style={styles.infoValue}>{job.salary}</span>
-              </div>
-              <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Stage</span>
-                <span style={styles.infoValue}>Application Collection</span>
-              </div>
-            </div>
-
-            <div style={styles.actionRow}>
-              <button style={styles.viewButton}>View</button>
-              <button style={styles.editButton}>Edit</button>
-              <button style={styles.deleteButton}>Delete</button>
+                Cancel
+              </button>
+              <button
+                style={styles.confirmButton}
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving
+                  ? "Saving…"
+                  : modal === "create"
+                    ? "Create Job"
+                    : "Save Changes"}
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function getStatusColor(status) {
-  if (status === "Active") {
-    return { bg: "#dcfce7", text: "#166534" };
-  }
-  if (status === "Draft") {
-    return { bg: "#fef3c7", text: "#92400e" };
-  }
-  return { bg: "#fee2e2", text: "#991b1b" };
+function InfoRow({ label, value }) {
+  return (
+    <div style={styles.infoRow}>
+      <span style={styles.infoLabel}>{label}</span>
+      <span style={styles.infoValue}>{value}</span>
+    </div>
+  );
+}
+
+function FormField({ label, value, onChange }) {
+  return (
+    <div style={styles.fieldWrap}>
+      <label style={styles.fieldLabel}>{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={styles.input}
+      />
+    </div>
+  );
 }
 
 const styles = {
@@ -216,16 +432,8 @@ const styles = {
     flexWrap: "wrap",
     marginBottom: "24px",
   },
-  smallText: {
-    margin: 0,
-    color: "#64748b",
-    fontSize: "14px",
-  },
-  heading: {
-    margin: "8px 0 10px 0",
-    fontSize: "38px",
-    color: "#0f172a",
-  },
+  smallText: { margin: 0, color: "#64748b", fontSize: "14px" },
+  heading: { margin: "8px 0 10px 0", fontSize: "38px", color: "#0f172a" },
   subText: {
     margin: 0,
     maxWidth: "760px",
@@ -233,11 +441,7 @@ const styles = {
     lineHeight: 1.7,
     fontSize: "15px",
   },
-  topActions: {
-    display: "flex",
-    gap: "12px",
-    flexWrap: "wrap",
-  },
+  topActions: { display: "flex", gap: "12px", flexWrap: "wrap" },
   primaryTopButton: {
     border: "none",
     background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
@@ -272,21 +476,9 @@ const styles = {
     boxShadow: "0 14px 35px rgba(15,23,42,0.06)",
     border: "1px solid #eef2f7",
   },
-  statLabel: {
-    margin: 0,
-    color: "#64748b",
-    fontSize: "14px",
-  },
-  statValue: {
-    margin: "12px 0 8px 0",
-    color: "#0f172a",
-    fontSize: "32px",
-  },
-  statNote: {
-    margin: 0,
-    color: "#94a3b8",
-    fontSize: "13px",
-  },
+  statLabel: { margin: 0, color: "#64748b", fontSize: "14px" },
+  statValue: { margin: "12px 0 8px 0", color: "#0f172a", fontSize: "32px" },
+  statNote: { margin: 0, color: "#94a3b8", fontSize: "13px" },
   toolbar: {
     background: "#ffffff",
     borderRadius: "24px",
@@ -300,10 +492,7 @@ const styles = {
     border: "1px solid #eef2f7",
     flexWrap: "wrap",
   },
-  searchWrap: {
-    flex: 1,
-    minWidth: "280px",
-  },
+  searchWrap: { flex: 1, minWidth: "280px" },
   searchInput: {
     width: "100%",
     height: "54px",
@@ -315,11 +504,7 @@ const styles = {
     outline: "none",
     boxSizing: "border-box",
   },
-  filterWrap: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
-  },
+  filterWrap: { display: "flex", gap: "10px", flexWrap: "wrap" },
   filterButton: {
     border: "1px solid #e2e8f0",
     background: "#ffffff",
@@ -327,6 +512,15 @@ const styles = {
     padding: "12px 16px",
     borderRadius: "14px",
     fontWeight: "600",
+    cursor: "pointer",
+  },
+  filterButtonActive: {
+    border: "none",
+    background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
+    color: "#fff",
+    padding: "12px 16px",
+    borderRadius: "14px",
+    fontWeight: "700",
     cursor: "pointer",
   },
   cardGrid: {
@@ -348,12 +542,7 @@ const styles = {
     gap: "14px",
     marginBottom: "16px",
   },
-  jobDept: {
-    margin: 0,
-    color: "#2563eb",
-    fontSize: "13px",
-    fontWeight: "700",
-  },
+  jobDept: { margin: 0, color: "#2563eb", fontSize: "13px", fontWeight: "700" },
   jobTitle: {
     margin: "8px 0 0 0",
     color: "#0f172a",
@@ -397,11 +586,7 @@ const styles = {
     padding: "10px 0",
     borderBottom: "1px solid #e2e8f0",
   },
-  infoLabel: {
-    color: "#64748b",
-    fontSize: "14px",
-    fontWeight: "600",
-  },
+  infoLabel: { color: "#64748b", fontSize: "14px", fontWeight: "600" },
   infoValue: {
     color: "#0f172a",
     fontSize: "14px",
@@ -446,6 +631,82 @@ const styles = {
     fontWeight: "700",
     cursor: "pointer",
     minWidth: "90px",
+  },
+  emptyMsg: { color: "#94a3b8", fontSize: "14px", padding: "20px 0" },
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15,23,42,0.45)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 100,
+    padding: "20px",
+  },
+  modal: {
+    background: "#fff",
+    borderRadius: "26px",
+    padding: "32px",
+    width: "100%",
+    maxWidth: "580px",
+    boxShadow: "0 30px 60px rgba(15,23,42,0.18)",
+    maxHeight: "90vh",
+    overflowY: "auto",
+  },
+  modalTitle: { margin: "0 0 20px 0", fontSize: "24px", color: "#0f172a" },
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "14px",
+  },
+  fieldWrap: { display: "grid", gap: "8px" },
+  fieldLabel: { fontSize: "13px", fontWeight: "700", color: "#334155" },
+  input: {
+    height: "50px",
+    borderRadius: "14px",
+    border: "1px solid #dbe2ea",
+    padding: "0 14px",
+    fontSize: "14px",
+    background: "#f8fafc",
+    outline: "none",
+    boxSizing: "border-box",
+  },
+  textarea: {
+    minHeight: "100px",
+    borderRadius: "14px",
+    border: "1px solid #dbe2ea",
+    padding: "12px 14px",
+    fontSize: "14px",
+    background: "#f8fafc",
+    outline: "none",
+    resize: "vertical",
+    fontFamily: "Arial, sans-serif",
+    boxSizing: "border-box",
+    width: "100%",
+  },
+  modalActions: {
+    display: "flex",
+    gap: "12px",
+    justifyContent: "flex-end",
+    marginTop: "22px",
+  },
+  cancelButton: {
+    border: "1px solid #dbe2ea",
+    background: "#fff",
+    color: "#0f172a",
+    padding: "12px 20px",
+    borderRadius: "14px",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+  confirmButton: {
+    border: "none",
+    background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
+    color: "#fff",
+    padding: "12px 20px",
+    borderRadius: "14px",
+    fontWeight: "700",
+    cursor: "pointer",
   },
 };
 

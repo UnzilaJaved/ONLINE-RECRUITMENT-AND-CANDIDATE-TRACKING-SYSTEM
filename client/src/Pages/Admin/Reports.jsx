@@ -1,47 +1,51 @@
+import { useState, useEffect } from "react";
+
 function Reports() {
+  const [summary, setSummary] = useState(null);
+  const [byDept, setByDept] = useState([]);
+  const [pipeline, setPipeline] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = () => {
+    setLoading(true);
+    fetch("/api/admin/reports")
+      .then((r) => r.json())
+      .then((data) => {
+        setSummary(data.summary || null);
+        setByDept(data.byDept || []);
+        setPipeline(data.pipeline || []);
+        setInsights(data.insights || []);
+      })
+      .catch((err) => console.error("Reports fetch error:", err))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const summaryCards = [
-    { label: "Applications Received", value: "1,284", note: "Total this cycle" },
-    { label: "Shortlisted", value: "186", note: "Moved forward" },
-    { label: "Interviews Conducted", value: "63", note: "Completed sessions" },
-    { label: "Offers Released", value: "21", note: "Final selections" },
-  ];
-
-  const reportRows = [
     {
-      department: "Engineering",
-      applications: 486,
-      shortlisted: 74,
-      interviews: 28,
-      selected: 9,
+      label: "Applications Received",
+      value: summary?.totalApps,
+      note: "Total this cycle",
     },
     {
-      department: "Design",
-      applications: 214,
-      shortlisted: 31,
-      interviews: 12,
-      selected: 4,
+      label: "Shortlisted",
+      value: summary?.shortlisted,
+      note: "Moved forward",
     },
     {
-      department: "Human Resources",
-      applications: 168,
-      shortlisted: 22,
-      interviews: 8,
-      selected: 3,
+      label: "Interviews Conducted",
+      value: summary?.interviews,
+      note: "Completed sessions",
     },
     {
-      department: "Operations",
-      applications: 201,
-      shortlisted: 29,
-      interviews: 9,
-      selected: 3,
+      label: "Offers Released",
+      value: summary?.offered,
+      note: "Final selections",
     },
-  ];
-
-  const insights = [
-    "Engineering roles received the highest volume of applications this cycle.",
-    "Shortlist conversion improved compared to the previous month.",
-    "Interview-to-offer ratio is strongest in the Design department.",
-    "Pending decisions should be closed before the next hiring round starts.",
   ];
 
   return (
@@ -55,21 +59,26 @@ function Reports() {
             monitor overall recruitment outcomes.
           </p>
         </div>
-
-        <button style={styles.primaryButton}>Download Report</button>
+        <button style={styles.primaryButton} onClick={fetchData}>
+          Refresh
+        </button>
       </div>
 
+      {/* Summary stats */}
       <div style={styles.statsGrid}>
-        {summaryCards.map((item, index) => (
-          <div key={index} style={styles.statCard}>
+        {summaryCards.map((item, i) => (
+          <div key={i} style={styles.statCard}>
             <p style={styles.statLabel}>{item.label}</p>
-            <h2 style={styles.statValue}>{item.value}</h2>
+            <h2 style={styles.statValue}>
+              {loading ? "…" : (item.value ?? 0)}
+            </h2>
             <p style={styles.statNote}>{item.note}</p>
           </div>
         ))}
       </div>
 
       <div style={styles.grid}>
+        {/* Department table */}
         <div style={styles.leftColumn}>
           <div style={styles.panel}>
             <div style={styles.panelHeader}>
@@ -79,57 +88,72 @@ function Reports() {
               </div>
             </div>
 
-            <div style={styles.tableWrap}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Department</th>
-                    <th style={styles.th}>Applications</th>
-                    <th style={styles.th}>Shortlisted</th>
-                    <th style={styles.th}>Interviews</th>
-                    <th style={styles.th}>Selected</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reportRows.map((row, index) => (
-                    <tr key={index}>
-                      <td style={styles.td}>{row.department}</td>
-                      <td style={styles.td}>{row.applications}</td>
-                      <td style={styles.td}>{row.shortlisted}</td>
-                      <td style={styles.td}>{row.interviews}</td>
-                      <td style={styles.td}>{row.selected}</td>
+            {loading ? (
+              <p style={styles.emptyMsg}>Loading…</p>
+            ) : byDept.length === 0 ? (
+              <p style={styles.emptyMsg}>No data yet.</p>
+            ) : (
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Department</th>
+                      <th style={styles.th}>Applications</th>
+                      <th style={styles.th}>Shortlisted</th>
+                      <th style={styles.th}>Interviews</th>
+                      <th style={styles.th}>Selected</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {byDept.map((row, i) => (
+                      <tr key={i}>
+                        <td style={styles.td}>{row.department}</td>
+                        <td style={styles.td}>{row.applications}</td>
+                        <td style={styles.td}>{row.shortlisted}</td>
+                        <td style={styles.td}>{row.interviews}</td>
+                        <td style={styles.td}>{row.selected}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 
         <div style={styles.rightColumn}>
+          {/* Pipeline chart */}
           <div style={styles.panel}>
             <p style={styles.panelMini}>Visual Overview</p>
             <h3 style={styles.panelTitle}>Pipeline Snapshot</h3>
 
-            <div style={styles.chartList}>
-              <ChartRow label="Applications" value="100%" />
-              <ChartRow label="Shortlisted" value="62%" />
-              <ChartRow label="Interviewed" value="34%" />
-              <ChartRow label="Selected" value="18%" />
-            </div>
+            {loading ? (
+              <p style={styles.emptyMsg}>Loading…</p>
+            ) : (
+              <div style={styles.chartList}>
+                {pipeline.map((item, i) => (
+                  <ChartRow key={i} label={item.label} value={item.value} />
+                ))}
+              </div>
+            )}
           </div>
 
+          {/* Insights */}
           <div style={styles.panel}>
             <p style={styles.panelMini}>Management Notes</p>
             <h3 style={styles.panelTitle}>Key Insights</h3>
 
-            <div style={styles.insightList}>
-              {insights.map((item, index) => (
-                <div key={index} style={styles.insightItem}>
-                  {item}
-                </div>
-              ))}
-            </div>
+            {loading ? (
+              <p style={styles.emptyMsg}>Loading…</p>
+            ) : (
+              <div style={styles.insightList}>
+                {insights.map((item, i) => (
+                  <div key={i} style={styles.insightItem}>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -145,12 +169,7 @@ function ChartRow({ label, value }) {
         <span style={styles.chartValue}>{value}</span>
       </div>
       <div style={styles.chartBarBg}>
-        <div
-          style={{
-            ...styles.chartBarFill,
-            width: value,
-          }}
-        ></div>
+        <div style={{ ...styles.chartBarFill, width: value }} />
       </div>
     </div>
   );
@@ -171,16 +190,8 @@ const styles = {
     flexWrap: "wrap",
     marginBottom: "24px",
   },
-  eyebrow: {
-    margin: 0,
-    color: "#64748b",
-    fontSize: "14px",
-  },
-  heading: {
-    margin: "8px 0 10px 0",
-    fontSize: "38px",
-    color: "#0f172a",
-  },
+  eyebrow: { margin: 0, color: "#64748b", fontSize: "14px" },
+  heading: { margin: "8px 0 10px 0", fontSize: "38px", color: "#0f172a" },
   subheading: {
     margin: 0,
     color: "#475569",
@@ -211,33 +222,12 @@ const styles = {
     boxShadow: "0 14px 35px rgba(15,23,42,0.06)",
     border: "1px solid #eef2f7",
   },
-  statLabel: {
-    margin: 0,
-    color: "#64748b",
-    fontSize: "14px",
-  },
-  statValue: {
-    margin: "12px 0 8px 0",
-    fontSize: "34px",
-    color: "#0f172a",
-  },
-  statNote: {
-    margin: 0,
-    color: "#94a3b8",
-    fontSize: "13px",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "1.35fr 1fr",
-    gap: "20px",
-  },
-  leftColumn: {
-    display: "grid",
-  },
-  rightColumn: {
-    display: "grid",
-    gap: "20px",
-  },
+  statLabel: { margin: 0, color: "#64748b", fontSize: "14px" },
+  statValue: { margin: "12px 0 8px 0", fontSize: "34px", color: "#0f172a" },
+  statNote: { margin: 0, color: "#94a3b8", fontSize: "13px" },
+  grid: { display: "grid", gridTemplateColumns: "1.35fr 1fr", gap: "20px" },
+  leftColumn: { display: "grid" },
+  rightColumn: { display: "grid", gap: "20px" },
   panel: {
     background: "#fff",
     borderRadius: "28px",
@@ -245,26 +235,11 @@ const styles = {
     boxShadow: "0 14px 35px rgba(15,23,42,0.06)",
     border: "1px solid #eef2f7",
   },
-  panelHeader: {
-    marginBottom: "18px",
-  },
-  panelMini: {
-    margin: 0,
-    color: "#64748b",
-    fontSize: "13px",
-  },
-  panelTitle: {
-    margin: "6px 0 0 0",
-    color: "#0f172a",
-    fontSize: "24px",
-  },
-  tableWrap: {
-    overflowX: "auto",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-  },
+  panelHeader: { marginBottom: "18px" },
+  panelMini: { margin: 0, color: "#64748b", fontSize: "13px" },
+  panelTitle: { margin: "6px 0 0 0", color: "#0f172a", fontSize: "24px" },
+  tableWrap: { overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "collapse" },
   th: {
     textAlign: "left",
     padding: "14px 10px",
@@ -278,28 +253,15 @@ const styles = {
     fontSize: "14px",
     borderBottom: "1px solid #f1f5f9",
   },
-  chartList: {
-    display: "grid",
-    gap: "18px",
-    marginTop: "6px",
-  },
-  chartRow: {
-    display: "grid",
-    gap: "10px",
-  },
+  chartList: { display: "grid", gap: "18px", marginTop: "6px" },
+  chartRow: { display: "grid", gap: "10px" },
   chartTop: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  chartLabel: {
-    color: "#1e293b",
-    fontWeight: "700",
-  },
-  chartValue: {
-    color: "#64748b",
-    fontWeight: "700",
-  },
+  chartLabel: { color: "#1e293b", fontWeight: "700" },
+  chartValue: { color: "#64748b", fontWeight: "700" },
   chartBarBg: {
     width: "100%",
     height: "14px",
@@ -312,10 +274,7 @@ const styles = {
     background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
     borderRadius: "999px",
   },
-  insightList: {
-    display: "grid",
-    gap: "12px",
-  },
+  insightList: { display: "grid", gap: "12px" },
   insightItem: {
     padding: "15px 16px",
     borderRadius: "16px",
@@ -325,6 +284,7 @@ const styles = {
     fontSize: "14px",
     lineHeight: 1.6,
   },
+  emptyMsg: { color: "#94a3b8", fontSize: "14px", padding: "10px 0" },
 };
 
 export default Reports;
