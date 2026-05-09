@@ -19,25 +19,20 @@ function toRecommendation(finalDecision) {
 }
 
 // ─── GET /api/admin/feedback ──────────────────────────────────────────────────
-// Powers FeedbackDecision.jsx — returns completed interviews awaiting decision,
-// joined with candidate name, job title. Also returns stats.
 router.get('/', async (req, res) => {
   try {
-    // ── Stats ───────────────────────────────────────────────────────────────
     const [
       { count: pendingDecisions },
       { count: hireCount },
       { count: rejectCount },
       { count: finalRound },
     ] = await Promise.all([
-      // Pending = completed interviews with no feedback yet
       supabase.from('interviews').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
       supabase.from('feedback').select('*',   { count: 'exact', head: true }).eq('recommendation', 'hire'),
       supabase.from('feedback').select('*',   { count: 'exact', head: true }).eq('recommendation', 'reject'),
       supabase.from('interviews').select('*', { count: 'exact', head: true }).eq('status', 'scheduled'),
     ])
 
-    // ── Completed interviews (decision queue) ───────────────────────────────
     const { data: interviews, error: ivError } = await supabase
       .from('interviews')
       .select(`
@@ -58,11 +53,8 @@ router.get('/', async (req, res) => {
 
     if (ivError) return res.status(400).json({ error: ivError.message })
 
-    // ── Resolve interviewer names (if present) ──────────────────────────────
     const interviewerIds = [...new Set(
-      (interviews || [])
-        .map((iv) => iv.interviewer_id)
-        .filter(Boolean)
+      (interviews || []).map((iv) => iv.interviewer_id).filter(Boolean)
     )]
 
     let interviewerMap = {}
@@ -75,15 +67,15 @@ router.get('/', async (req, res) => {
     }
 
     const queue = (interviews || []).map((iv) => ({
-      id:              iv.id,
-      interviewDate:   iv.interview_date,
-      mode:            iv.mode === 'onsite' ? 'On-site' : 'Google Meet',
-      ivStatus:        iv.status,
-      applicationId:   iv.application_id,
-      candidateName:   iv.applications?.candidates?.profiles?.full_name ?? 'Unknown',
-      jobTitle:        iv.applications?.jobs?.title                      ?? '—',
-      interviewer:     interviewerMap[iv.interviewer_id] ?? 'Not assigned',
-      decisionStatus:  iv.feedback?.length > 0
+      id:               iv.id,
+      interviewDate:    iv.interview_date,
+      mode:             iv.mode === 'onsite' ? 'On-site' : 'Google Meet',
+      ivStatus:         iv.status,
+      applicationId:    iv.application_id,
+      candidateName:    iv.applications?.candidates?.profiles?.full_name ?? 'Unknown',
+      jobTitle:         iv.applications?.jobs?.title                      ?? '—',
+      interviewer:      interviewerMap[iv.interviewer_id] ?? 'Not assigned',
+      decisionStatus:   iv.feedback?.length > 0
         ? (iv.feedback[0].recommendation === 'hire' ? 'Selected' : 'Rejected')
         : 'Pending Decision',
       existingFeedback: iv.feedback?.length > 0 ? iv.feedback[0] : null,
@@ -105,9 +97,9 @@ router.get('/', async (req, res) => {
 })
 
 // ─── POST /api/admin/feedback ─────────────────────────────────────────────────
-// Powers "Save Final Decision" in FeedbackDecision.jsx.
-// We store all form scores in 'comments' as JSON alongside the detailed text.
-// recommendation is mapped from finalDecision → 'hire' | 'reject'.
+// Fix: manually check for existing row then INSERT or UPDATE.
+// upsert with onConflict: 'interview_id' requires a UNIQUE constraint on that
+// column which the feedback table doesn't have — so we do it manually.
 router.post('/', async (req, res) => {
   const {
     interviewId,
@@ -126,7 +118,6 @@ router.post('/', async (req, res) => {
 
   const recommendation = toRecommendation(finalDecision)
 
-  // Build a JSON payload for comments so no data is lost
   const commentsPayload = JSON.stringify({
     technicalScore:     technicalScore     ?? null,
     communicationScore: communicationScore ?? null,
@@ -136,25 +127,46 @@ router.post('/', async (req, res) => {
     detailedFeedback:   detailedFeedback   ?? '',
   })
 
-  // Upsert — one feedback record per interview
-  const { data, error } = await supabase
+  // 1. Check if a feedback row already exists for this interview
+  const { data: existing, error: checkError } = await supabase
     .from('feedback')
-    .upsert(
-      {
-        interview_id:    interviewId,
+    .select('id')
+    .eq('interview_id', interviewId)
+    .maybeSingle()
+
+  if (checkError) return res.status(400).json({ error: checkError.message })
+
+  let data, error
+
+  if (existing) {
+    // 2a. Row exists — UPDATE by id
+    ;({ data, error } = await supabase
+      .from('feedback')
+      .update({
         recommendation,
-        comments:        commentsPayload,
-        created_by:      createdBy ?? null,
-      },
-      { onConflict: 'interview_id' }
-    )
-    .select()
-    .single()
+        comments:   commentsPayload,
+        created_by: createdBy ?? null,
+      })
+      .eq('id', existing.id)
+      .select()
+      .single())
+  } else {
+    // 2b. No row — INSERT fresh
+    ;({ data, error } = await supabase
+      .from('feedback')
+      .insert({
+        interview_id: interviewId,
+        recommendation,
+        comments:     commentsPayload,
+        created_by:   createdBy ?? null,
+      })
+      .select()
+      .single())
+  }
 
   if (error) return res.status(400).json({ error: error.message })
 
-  // Update linked application status based on decision
-  // First resolve the application_id via the interview row
+  // 3. Update linked application status based on decision
   const { data: iv } = await supabase
     .from('interviews')
     .select('application_id')
@@ -167,14 +179,12 @@ router.post('/', async (req, res) => {
       .from('applications')
       .update({ status: newStatus })
       .eq('id', iv.application_id)
-      .then(() => {}).catch(() => {})
   }
 
   res.status(201).json(data)
 })
 
 // ─── GET /api/admin/feedback/:interviewId ────────────────────────────────────
-// Returns existing feedback for an interview (for pre-filling the form).
 router.get('/:interviewId', async (req, res) => {
   const { interviewId } = req.params
 
@@ -187,7 +197,6 @@ router.get('/:interviewId', async (req, res) => {
   if (error) return res.status(400).json({ error: error.message })
   if (!data)  return res.json(null)
 
-  // Parse comments JSON back into fields for the form
   let parsed = {}
   try { parsed = JSON.parse(data.comments || '{}') } catch {}
 

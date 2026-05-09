@@ -69,8 +69,6 @@ function AdminLogin() {
 
         <div style={styles.navLinks}>
           <Link to="/" style={styles.navLink}>Home</Link>
-          <Link to="/jobs" style={styles.navLink}>Jobs</Link>
-          <Link to="/candidate-login" style={styles.navLink}>Candidate</Link>
         </div>
       </nav>
 
@@ -111,10 +109,6 @@ function AdminLogin() {
             </button>
           </form>
 
-          <p style={styles.footerText}>
-            New admin?{" "}
-            <Link to="/admin-signup" style={styles.link}>Create an account</Link>
-          </p>
         </div>
       </div>
     </div>

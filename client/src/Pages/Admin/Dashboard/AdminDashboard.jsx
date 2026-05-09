@@ -82,11 +82,11 @@ function AdminDashboard() {
   }));
 
   const quickActions = [
-    { label: "Create Job Post",      path: "/admin/jobs/create" },
-    { label: "View Applications",    path: "/admin/applications" },
-    { label: "Shortlist Candidates", path: "/admin/applications" },
-    { label: "Schedule Interview",   path: "/admin/interviews" },
-    { label: "Manage Admins",        path: "/admin-signup" },
+    { label: "Manage Jobs",      path: "/admin/jobs" },
+    { label: "View Applications",    path: "/Admin/Applications" },
+    { label: "Shortlist Candidates", path: "/admin/shortlist" },
+    { label: "Schedule Interview",   path: "/admin/interview" },
+    { label: "Manage Admins",        path: "/admin/signup"},
     { label: "Open Reports",         path: "/admin/reports" },
   ];
 

@@ -26,12 +26,59 @@ const InterviewSchedule = lazy(() => import("./Pages/Admin/InterviewSchedule"));
 const FeedbackDecision = lazy(() => import("./Pages/Admin/FeedbackDecision"));
 const Reports = lazy(() => import("./Pages/Admin/Reports"));
 
+// ── Loader styles (injected once, no external deps) ───────────────────────────
+const css = `
+  @keyframes japs-bounce {
+    0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }
+    40%           { transform: scale(1.0); opacity: 1.0; }
+  }
+  .japs-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    display: inline-block;
+    animation: japs-bounce 1.4s ease-in-out infinite;
+  }
+  .japs-dot:nth-child(1) { animation-delay: 0s;    }
+  .japs-dot:nth-child(2) { animation-delay: 0.2s;  }
+  .japs-dot:nth-child(3) { animation-delay: 0.4s;  }
+`;
+
+if (!document.getElementById("japs-loader-style")) {
+  const tag = document.createElement("style");
+  tag.id = "japs-loader-style";
+  tag.textContent = css;
+  document.head.appendChild(tag);
+}
+
+function PageLoader() {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "20px",
+      background: "#f4f7fb",
+      fontFamily: "Arial, sans-serif",
+    }}>
+      <div style={{ display: "flex", gap: "10px" }}>
+        <span className="japs-dot" />
+        <span className="japs-dot" />
+        <span className="japs-dot" />
+      </div>
+      <p style={{ margin: 0, color: "#94a3b8", fontSize: "14px", fontWeight: "600" }}>
+        Loading...
+      </p>
+    </div>
+  );
+}
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 function AppRoutes() {
   const location = useLocation();
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -41,15 +88,14 @@ function AppRoutes() {
     const handleGlobalClick = (event) => {
       const target = event.target.closest("a,button");
       if (!target) return;
-      scrollToTop();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     };
-
     document.addEventListener("click", handleGlobalClick);
     return () => document.removeEventListener("click", handleGlobalClick);
   }, []);
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PageLoader />}>
       <Routes>
 
         {/* Public */}

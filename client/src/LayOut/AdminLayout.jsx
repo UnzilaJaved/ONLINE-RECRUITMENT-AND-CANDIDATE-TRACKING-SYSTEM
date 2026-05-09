@@ -4,7 +4,7 @@ function AdminLayout() {
   return (
     <div style={styles.page}>
       <aside style={styles.sidebar}>
-        <div>
+        <div style={styles.sidebarInner}>
           <div style={styles.brandWrap}>
             <div style={styles.brandIcon}>JA</div>
             <div>
@@ -15,53 +15,17 @@ function AdminLayout() {
 
           <div style={styles.sidebarSection}>
             <p style={styles.sidebarLabel}>Main Menu</p>
-
-            <Link to="/admin/dashboard" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}  
-            style={styles.navItem}>
-              Dashboard
-            </Link>
-            <Link to="/admin/jobs" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            style={styles.navItem}>
-              Manage Jobs
-            </Link>
-            <Link to="/admin/applications" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            style={styles.navItem}>
-              Applications
-            </Link>
-            <Link to="/admin/shortlist" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            style={styles.navItem}>
-              Shortlisting
-            </Link>
-            <Link to="/admin/interview" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            style={styles.navItem}>
-              Interviews
-            </Link>
-            <Link to="/admin/feedback" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            style={styles.navItem}>
-              Decisions
-            </Link>
-            <Link to="/admin/reports" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            style={styles.navItem}>
-              Reports
-            </Link>
-            <Link to="/admin/signup" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            style={styles.navItem}>
-              Admin Registration
-            </Link>
-            <Link to="/admin-login" 
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} 
-            style={styles.Logout}>
-              Logout
-            </Link>
+            <Link to="/admin/dashboard" style={styles.navItem}>Dashboard</Link>
+            <Link to="/admin/jobs" style={styles.navItem}>Manage Jobs</Link>
+            <Link to="/admin/applications" style={styles.navItem}>Applications</Link>
+            <Link to="/admin/shortlist" style={styles.navItem}>Shortlisting</Link>
+            <Link to="/admin/interview" style={styles.navItem}>Interviews</Link>
+            <Link to="/admin/feedback" style={styles.navItem}>Decisions</Link>
+            <Link to="/admin/reports" style={styles.navItem}>Reports</Link>
+            <Link to="/admin/signup" style={styles.navItem}>Admin Registration</Link>
           </div>
+
+          <Link to="/admin-login" style={styles.logout}>Logout</Link>
         </div>
       </aside>
 
@@ -73,22 +37,42 @@ function AdminLayout() {
 }
 
 const styles = {
+  // ── Outer wrapper: just a flex row, no min-height needed here ──────────────
   page: {
-    minHeight: "100vh",
-    display: "grid",
-    gridTemplateColumns: "290px 1fr",
+    display: "flex",
+    alignItems: "flex-start",
     background: "#f4f7fb",
     fontFamily: "Arial, sans-serif",
   },
+
+  // ── Sidebar: sticky so it stays in place while main scrolls ───────────────
   sidebar: {
+    position: "sticky",
+    top: 0,
+    height: "100vh",
+    width: "290px",
+    flexShrink: 0,                // never squish the sidebar
+    overflowY: "auto",            // sidebar itself scrolls if nav is very long
     background: "linear-gradient(180deg, #0f172a 0%, #111827 50%, #1e293b 100%)",
     color: "#fff",
-    padding: "24px 18px",
     borderRight: "1px solid rgba(255,255,255,0.06)",
   },
-  main: {
-    minWidth: 0,
+
+  // ── Inner wrapper handles padding and flex layout inside the sidebar ───────
+  sidebarInner: {
+    display: "flex",
+    flexDirection: "column",
+    minHeight: "100vh",           // stretch so logout stays at the bottom
+    padding: "24px 18px",
   },
+
+  // ── Main content: grows to fill remaining width, page scroll lives here ────
+  main: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: "100vh",
+  },
+
   brandWrap: {
     display: "flex",
     alignItems: "center",
@@ -118,6 +102,7 @@ const styles = {
   sidebarSection: {
     display: "grid",
     gap: "10px",
+    flex: 1,                      // push logout to the bottom
   },
   sidebarLabel: {
     color: "#64748b",
@@ -135,17 +120,17 @@ const styles = {
     fontWeight: "600",
     display: "block",
     background: "rgba(255,255,255,0.03)",
-    transition: "all 0.2s ease",
-    wordBreak: "break-word",
   },
-  Logout: {
+  logout: {
     textDecoration: "none",
     color: "#dc2626",
     background: "#fee2e2",
     padding: "15px 14px",
     borderRadius: "17px",
-    marginTop: "122px",
+    marginTop: "24px",
     fontWeight: "700",
+    display: "block",
+    textAlign: "center",
   },
 };
 
